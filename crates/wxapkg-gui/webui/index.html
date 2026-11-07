@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>wxapkg-dump</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="chrome" data-tauri-drag-region>
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="2.5" y="2.5" width="19" height="19" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M7 9.5l3 5 2-3.4 2 3.4 3-5" fill="none" stroke="currentColor" stroke-width="1.6"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span class="wordmark">wxapkg<span class="dim">-dump</span></span>
+    <span id="version" class="version">—</span>
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab is-active" data-view="local" role="tab" aria-selected="true" data-i18n="tab.local">本机</button>
+    <button class="tab" data-view="remote" role="tab" aria-selected="false" data-i18n="tab.remote">远程下载</button>
+  </nav>
+
+  <label class="search">
+    <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.2 10.2L13.5 13.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <input id="filter" type="search" placeholder="过滤 appid / 名称" autocomplete="off" aria-label="过滤" data-i18n-ph="filter.ph">
+  </label>
+
+  <div class="chrome-actions">
+    <button id="btn-downloads" class="icon-btn" type="button" title="下载记录" aria-label="下载记录" data-i18n-aria="header.downloads" data-i18n-title="header.downloads">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v7.2M5.2 6.6L8 9.4l2.8-2.8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.8 11.2v1.2a1.2 1.2 0 0 0 1.2 1.2h8a1.2 1.2 0 0 0 1.2-1.2v-1.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <span id="download-count" class="dot" hidden></span>
+    </button>
+    <button id="btn-unpack-file" class="btn quiet small" type="button" data-i18n="header.unpack">指定解包…</button>
+    <button id="btn-decrypt-folder" class="btn quiet small" type="button" data-i18n="header.decrypt">文件夹解密…</button>
+    <button id="btn-refresh" class="icon-btn" type="button" title="重新扫描" aria-label="重新扫描" data-i18n-title="header.rescan">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.6-3.7M13 2.6V5.4h-2.8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button id="btn-logs" class="icon-btn" type="button" title="日志" aria-label="日志" data-i18n-title="header.logs" aria-expanded="false">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5h10M3 8h10M3 11.5h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <span id="log-dot" class="dot" hidden></span>
+    </button>
+    <button id="btn-settings" class="icon-btn" type="button" title="设置" aria-label="设置" data-i18n-title="header.settings">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.6 1.5h2.8l.35 1.9c.42.16.81.38 1.17.65l1.8-.66 1.4 2.42-1.44 1.26c.03.23.05.46.05.7s-.02.47-.05.7l1.44 1.26-1.4 2.42-1.8-.66c-.36.27-.75.49-1.17.65l-.35 1.9H6.6l-.35-1.9a4.7 4.7 0 0 1-1.17-.65l-1.8.66-1.4-2.42 1.44-1.26a4.6 4.6 0 0 1 0-1.4L1.88 5.81l1.4-2.42 1.8.66c.36-.27.75-.49 1.17-.65l.35-1.9z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><circle cx="8" cy="8" r="2.3" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+    </button>
+    <a id="btn-github" class="icon-btn" href="https://github.com/RYF5584" target="_blank" rel="noreferrer" title="GitHub" aria-label="GitHub">
+      <svg class="" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" fill="currentColor"/></svg>
+    </a>
+    <button id="btn-wechat" class="icon-btn" type="button" title="微信：RSCompanyCEO" aria-label="微信">
+      <svg class="" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.047c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088V8.89c-.135-.01-.27-.027-.407-.03zm-2.53 3.274c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.969-.982z" fill="currentColor"/></svg>
+    </button>
+    <a id="btn-telegram" class="icon-btn" href="https://t.me/ryf5584" target="_blank" rel="noreferrer" title="Telegram" aria-label="Telegram">
+      <svg class="" viewBox="0 0 24 24" aria-hidden="true"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" fill="currentColor"/></svg>
+    </a>
+  </div>
+</header>
+
+<!-- one strip for every long job: scan, export, batch, download -->
+<section id="jobbar" class="jobbar" hidden aria-live="polite">
+  <span class="spinner" aria-hidden="true"></span>
+  <span id="job-label" class="job-label" data-i18n="job.running">处理中</span>
+  <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+    <div id="job-fill" class="progress-fill" style="width:0%"></div>
+  </div>
+  <span id="job-count" class="job-count">—</span>
+  <span id="job-time" class="job-time">0.0s</span>
+  <span id="job-msg" class="job-msg"></span>
+</section>
+
+<main>
+  <!-- ------------------------------------------------------------ local -->
+  <section id="view-local" class="view is-active" role="tabpanel">
+    <div class="toolbar">
+      <label class="check master">
+        <input id="select-all" type="checkbox" aria-label="全选" data-i18n-aria="sel.all">
+        <span data-i18n="sel.all">全选</span>
+      </label>
+      <button id="btn-invert" class="btn quiet small" type="button" data-i18n="sel.invert">反选</button>
+      <span id="selection" class="selection">—</span>
+      <span class="sep"></span>
+      <button id="btn-export-selected" class="btn primary" type="button" disabled data-i18n="btn.exportSelected">导出所选</button>
+      <button id="btn-batch" class="btn" type="button" disabled data-i18n="btn.batch">批量还原源码…</button>
+      <span class="grow"></span>
+    </div>
+
+    <p id="local-note" class="note" hidden></p>
+
+    <div class="table-wrap">
+      <table class="grid" id="programs-table">
+        <colgroup>
+          <col data-col="check" style="width:34px">
+          <col data-col="appid" style="width:230px">
+          <col data-col="version" style="width:84px">
+          <col data-col="packages" style="width:64px">
+          <col data-col="size" style="width:92px">
+          <col data-col="updated" style="width:150px">
+          <col data-col="state" style="width:76px">
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="c-check"></th>
+            <th data-col="appid" data-i18n-col="col.name">小程序<button class="grip" data-grip="appid" type="button" aria-label="调整列宽"></button></th>
+            <th class="c-ver" data-col="version" data-i18n-col="col.version">版本<button class="grip" data-grip="version" type="button" aria-label="调整列宽"></button></th>
+            <th class="c-num" data-col="packages" data-i18n-col="col.packages">分包<button class="grip" data-grip="packages" type="button" aria-label="调整列宽"></button></th>
+            <th class="c-num" data-col="size" data-i18n-col="col.size">大小<button class="grip" data-grip="size" type="button" aria-label="调整列宽"></button></th>
+            <th class="c-num sortable" data-col="updated" id="th-updated" data-i18n-col="col.updated">修改时间<button class="grip" data-grip="updated" type="button" aria-label="调整列宽"></button></th>
+            <th class="c-state" data-i18n="col.state">状态</th>
+          </tr>
+        </thead>
+        <tbody id="programs-body"></tbody>
+      </table>
+      <div id="local-empty" class="empty" hidden></div>
+    </div>
+  </section>
+
+  <!-- ----------------------------------------------------------- remote -->
+  <section id="view-remote" class="view" role="tabpanel">
+    <div id="accounts" class="accounts"></div>
+
+    <div class="querybar">
+      <input id="remote-query" class="field grow" type="text" spellcheck="false"
+             placeholder="输入 appid（wx…）或原始 ID（gh_…@app），查询后可直接下载" data-i18n-ph="remote.queryPh">
+      <button id="btn-info" class="btn primary" type="button" data-i18n="btn.query">搜索小程序</button>
+      <button id="btn-download-one" class="btn primary" type="button" data-i18n="btn.download">下载</button>
+    </div>
+
+    <div class="toolbar">
+      <label class="check master">
+        <input id="select-all-recent" type="checkbox" aria-label="全选最近使用" data-i18n-aria="sel.allRecent">
+        <span data-i18n="sel.all">全选</span>
+      </label>
+      <button id="btn-download-selected" class="btn" type="button" disabled data-i18n="btn.downloadSelected">下载所选</button>
+      <button id="btn-recent" class="btn primary" type="button" data-i18n="btn.refreshRecent">获取最近使用的小程序</button>
+      <span id="recent-note" class="selection">—</span>
+      <span class="grow"></span>
+    </div>
+
+    <div class="table-wrap">
+      <table class="grid" id="recent-table">
+        <colgroup>
+          <col style="width:34px">
+          <col style="width:34px">
+          <col data-col="r-name">
+          <col data-col="r-username" style="width:210px">
+          <col data-col="r-appid" style="width:190px">
+          <col data-col="r-used" style="width:150px">
+          <col style="width:118px">
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="c-check"></th>
+            <th class="c-icon"></th>
+            <th data-col="r-name" data-i18n-col="col.rname">名称<button class="grip" data-grip="r-name" type="button" aria-label="调整列宽"></button></th>
+            <th data-col="r-username" data-i18n-col="col.rusername">原始 ID<button class="grip" data-grip="r-username" type="button" aria-label="调整列宽"></button></th>
+            <th data-col="r-appid" data-i18n-col="col.rappid">appid<button class="grip" data-grip="r-appid" type="button" aria-label="调整列宽"></button></th>
+            <th class="c-num" data-col="r-used" data-i18n-col="col.rused">最近使用<button class="grip" data-grip="r-used" type="button" aria-label="调整列宽"></button></th>
+            <th class="c-act"></th>
+          </tr>
+        </thead>
+        <tbody id="recent-body"></tbody>
+      </table>
+      <div id="remote-empty" class="empty" hidden></div>
+    </div>
+  </section>
+</main>
+
+<footer class="statusbar">
+  <span id="status-os" class="mono">—</span>
+  <span class="sep"></span>
+  <span id="status-roots" class="mono truncate" title="">—</span>
+  <span class="grow"></span>
+  <span id="status-permission" class="chip warn" hidden></span>
+  <span id="status-remote" class="mono">—</span>
+</footer>
+
+<!-- ---------------------------------------------------------- batch modal -->
+<div id="modal-batch" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="batch-title">
+  <div class="sheet" tabindex="-1">
+    <header class="sheet-head">
+      <h2 id="batch-title" data-i18n="batch.title">批量还原源码</h2>
+      <button class="icon-btn" data-close type="button" aria-label="关闭" data-i18n-aria="btn.close">✕</button>
+    </header>
+    <div class="sheet-body">
+      <div class="fields">
+        <label class="field-row">
+          <span data-i18n="field.output">输出目录</span>
+          <span class="field-group">
+            <input id="batch-out" class="field grow" type="text" spellcheck="false" placeholder="留空使用默认目录" data-i18n-ph="field.outputPh">
+            <button id="batch-pick" class="btn" type="button" data-i18n="btn.pick">选择…</button>
+          </span>
+        </label>
+        <div class="field-row">
+          <span data-i18n="field.options">选项</span>
+          <span class="field-group">
+            <label class="check"><input id="batch-beautify" type="checkbox" checked> <span data-i18n="opt.beautify">美化</span></label>
+            <label class="check"><input id="batch-verify" type="checkbox" checked> <span data-i18n="opt.verify">校验</span></label>
+          </span>
+        </div>
+      </div>
+      <p id="batch-summary" class="hint" data-i18n="batch.none">尚未选择小程序。</p>
+      <ol id="batch-list" class="batch-list"></ol>
+    </div>
+    <footer class="sheet-foot">
+      <span id="batch-status" class="hint"></span>
+      <span class="grow"></span>
+      <button class="btn" data-close type="button" data-i18n="btn.close">关闭</button>
+      <button id="batch-run" class="btn primary" type="button" data-i18n="batch.run">开始导出</button>
+    </footer>
+  </div>
+</div>
+
+<!-- --------------------------------------------------------- detail modal -->
+<div id="modal-detail" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="detail-id">
+  <div class="sheet" tabindex="-1">
+    <header class="sheet-head">
+      <img id="detail-icon" class="app-icon" alt="" width="34" height="34">
+      <div class="sheet-title">
+        <h2 id="detail-id" class="mono">—</h2>
+        <p id="detail-sub" class="hint">—</p>
+      </div>
+      <button class="icon-btn" data-close type="button" aria-label="关闭" data-i18n-aria="btn.close">✕</button>
+    </header>
+    <div class="sheet-body">
+      <dl id="detail-facts" class="facts"></dl>
+
+      <label class="field-row">
+        <span data-i18n="field.output">输出目录</span>
+        <span class="field-group">
+          <input id="detail-out" class="field grow" type="text" spellcheck="false" placeholder="留空使用默认目录" data-i18n-ph="field.outputPh">
+          <button id="detail-pick" class="btn" type="button" data-i18n="btn.pick">选择…</button>
+        </span>
+      </label>
+
+      <div class="field-row">
+        <span data-i18n="field.options">选项</span>
+        <span class="field-group">
+          <label class="check"><input id="detail-beautify" type="checkbox" checked> <span data-i18n="opt.beautify">美化</span></label>
+          <label class="check"><input id="detail-verify" type="checkbox" checked> <span data-i18n="opt.verify">校验</span></label>
+          <button id="detail-advanced-toggle" class="btn quiet small" type="button" data-i18n="btn.advanced">高级…</button>
+        </span>
+      </div>
+
+      <div id="detail-advanced" class="flags" hidden>
+        <label class="check"><input id="flag-keep-raw" type="checkbox" checked> <span data-i18n="flag.keepRaw">保留原始包</span></label>
+        <label class="check"><input id="flag-wxml" type="checkbox" checked> <span data-i18n="flag.wxml">还原 WXML</span></label>
+        <label class="check"><input id="flag-requires" type="checkbox" checked> <span data-i18n="flag.requires">修正 require</span></label>
+        <label class="check"><input id="flag-prune" type="checkbox" checked> <span data-i18n="flag.prune">裁剪空页</span></label>
+        <label class="check"><input id="flag-synthesize" type="checkbox" checked> <span data-i18n="flag.synthesize">补齐缺失页</span></label>
+        <label class="check"><input id="flag-plugins" type="checkbox" checked> <span data-i18n="flag.plugins">清理插件</span></label>
+      </div>
+
+      <div id="detail-structure" class="structure" hidden></div>
+    </div>
+    <footer id="detail-local-foot" class="sheet-foot">
+      <button id="detail-inspect" class="btn quiet" type="button" data-i18n="btn.inspect">查看结构</button>
+      <button id="detail-reveal" class="btn quiet" type="button" data-i18n="btn.reveal">所在目录</button>
+      <button id="detail-raw" class="btn" type="button" data-i18n="btn.raw">原样导出</button>
+      <span class="grow"></span>
+      <button class="btn" data-close type="button" data-i18n="btn.close">关闭</button>
+      <button id="detail-unpack" class="btn primary" type="button" data-i18n="btn.unpackShort">还原</button>
+    </footer>
+  </div>
+</div>
+
+<!-- ---------------------------------------------------------- login modal -->
+<!-- ------------------------------------------------ explicit unpack -->
+<div id="modal-unpack" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="unpack-title">
+  <div class="sheet" tabindex="-1">
+    <header class="sheet-head">
+      <h2 id="unpack-title" data-i18n="unpack.title">指定 wxapkg 解包</h2>
+      <button class="icon-btn" data-close type="button" aria-label="关闭" data-i18n-aria="btn.close">✕</button>
+    </header>
+    <div class="sheet-body">
+      <section class="section">
+        <label class="field-row">
+          <span data-i18n="unpack.file">容器文件</span>
+          <span class="field-group">
+            <input id="unpack-file" class="field grow mono" type="text" spellcheck="false" placeholder="选择或粘贴 .wxapkg 路径" data-i18n-ph="unpack.filePh">
+            <button id="unpack-pick" class="btn" type="button" data-i18n="btn.pick">选择…</button>
+          </span>
+        </label>
+        <label class="field-row">
+          <span data-i18n="field.key">解密密钥</span>
+          <span class="field-group">
+            <input id="unpack-key" class="field grow mono" type="text" spellcheck="false" placeholder="wx + 16 位字符（未加密可留空）" data-i18n-ph="field.keyPh">
+          </span>
+        </label>
+        <p class="hint" data-i18n="hint.keyIsAppid">解密密钥就是小程序 APPID，格式：wx + 16 位字符，例如 wxabcdef1234567890。可以在微信的小程序资料里查看。</p>
+        <div class="field-row">
+          <span data-i18n="field.options">选项</span>
+          <span class="field-group">
+            <label class="check"><input id="unpack-beautify" type="checkbox" checked> <span data-i18n="opt.beautify">美化</span></label>
+          </span>
+        </div>
+      </section>
+    </div>
+    <footer class="sheet-foot">
+      <span class="grow"></span>
+      <button class="btn" data-close type="button" data-i18n="btn.close">关闭</button>
+      <button id="unpack-run" class="btn primary" type="button" data-i18n="unpack.run">开始解包</button>
+    </footer>
+  </div>
+</div>
+
+<!-- ------------------------------------------------ folder decrypt -->
+<div id="modal-decrypt" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="decrypt-title">
+  <div class="sheet" tabindex="-1">
+    <header class="sheet-head">
+      <h2 id="decrypt-title" data-i18n="decrypt.title">文件夹解密</h2>
+      <button class="icon-btn" data-close type="button" aria-label="关闭" data-i18n-aria="btn.close">✕</button>
+    </header>
+    <div class="sheet-body">
+      <section class="section">
+        <label class="field-row">
+          <span data-i18n="field.folder">文件夹</span>
+          <span class="field-group">
+            <input id="decrypt-folder" class="field grow mono" type="text" spellcheck="false" placeholder="包含 wxapkg 的文件夹" data-i18n-ph="decrypt.folderPh">
+            <button id="decrypt-pick" class="btn" type="button" data-i18n="btn.pick">选择…</button>
+          </span>
+        </label>
+        <label class="field-row">
+          <span data-i18n="field.key">解密密钥</span>
+          <span class="field-group">
+            <textarea id="decrypt-keys" class="field grow mono" rows="4" spellcheck="false" placeholder="每行一个，支持多个密钥轮换尝试" data-i18n-ph="decrypt.keysPh"></textarea>
+          </span>
+        </label>
+        <p class="hint" data-i18n="decrypt.hint">解密密钥就是小程序 APPID，格式：wx + 16 位字符，例如 wxabcdef1234567890。文件夹里的每个 wxapkg 都会用全部密钥轮换测试；未加密的文件直接复制到输出目录。</p>
+        <div id="decrypt-report" class="hint" hidden></div>
+      </section>
+    </div>
+    <footer class="sheet-foot">
+      <span class="grow"></span>
+      <button class="btn" data-close type="button" data-i18n="btn.close">关闭</button>
+      <button id="decrypt-run" class="btn primary" type="button" data-i18n="decrypt.run">开始解密</button>
+    </footer>
+  </div>
+</div>
+
+<!-- ------------------------------------------------ download center -->
+<div id="download-center" class="download-center" hidden role="dialog" aria-label="下载记录" data-i18n-aria="header.downloads">
+  <header class="drawer-head">
+    <span data-i18n="downloads.title">下载记录</span>
+    <span class="grow"></span>
+    <button id="download-clear" class="btn quiet small" type="button" data-i18n="btn.clear">清空</button>
+  </header>
+  <div id="download-list" class="download-list"></div>
+</div>
+
+<div id="modal-login" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="login-title">
+  <div class="sheet narrow" tabindex="-1">
+    <header class="sheet-head">
+      <h2 id="login-title" data-i18n="login.title">扫码登录</h2>
+      <button class="icon-btn" data-close type="button" aria-label="关闭" data-i18n-aria="btn.close">✕</button>
+    </header>
+    <div class="sheet-body login-body">
+      <div class="qr-box">
+        <img id="qr" alt="登录二维码" width="188" height="188" hidden data-i18n-alt="qr.alt">
+        <div id="qr-loading" class="qr-loading"><span class="spinner"></span><span data-i18n="login.fetching">正在获取二维码</span></div>
+      </div>
+      <div class="login-side">
+        <p id="login-hint" class="hint" data-i18n="qr.hint">用微信扫描二维码</p>
+        <p class="countdown"><span data-i18n="login.left">剩余</span> <span id="qr-left" class="mono">--:--</span></p>
+        <div class="login-actions">
+          <button id="login-restart" class="btn small" type="button" data-i18n="login.restart">重新获取</button>
+        </div>
+        <p class="hint tiny" data-i18n="login.persist">登录状态保存在本机；掉线后需要重新扫码。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ------------------------------------------------------- settings modal -->
+<div id="modal-settings" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="settings-title">
+  <div class="sheet wide" tabindex="-1">
+    <header class="sheet-head">
+      <h2 id="settings-title" data-i18n="settings.title">设置</h2>
+      <button class="icon-btn" data-close type="button" aria-label="关闭" data-i18n-aria="btn.close">✕</button>
+    </header>
+    <div class="sheet-body">
+      <section class="section">
+        <h3 data-i18n="about.title">关于与反馈</h3>
+        <div class="social-row">
+          <a id="about-github" class="social-card" href="https://github.com/RYF5584" target="_blank" rel="noreferrer">
+            <svg class="" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" fill="currentColor"/></svg>
+            <span class="social-name">GitHub</span>
+            <span class="social-id">RYF5584</span>
+          </a>
+          <button id="about-wechat" class="social-card" type="button">
+            <svg class="" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.047c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088V8.89c-.135-.01-.27-.027-.407-.03zm-2.53 3.274c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.969-.982z" fill="currentColor"/></svg>
+            <span class="social-name">WeChat</span>
+            <span class="social-id">RSCompanyCEO</span>
+          </button>
+          <a id="about-telegram" class="social-card" href="https://t.me/ryf5584" target="_blank" rel="noreferrer">
+            <svg class="" viewBox="0 0 24 24" aria-hidden="true"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" fill="currentColor"/></svg>
+            <span class="social-name">Telegram</span>
+            <span class="social-id">ryf5584</span>
+          </a>
+        </div>
+        <p class="hint" data-i18n="about.hint">点击微信卡片复制微信号。</p>
+        <p id="about-version" class="hint mono"></p>
+      </section>
+      <section class="section">
+        <h3 data-i18n="settings.export">导出</h3>
+        <label class="field-row">
+          <span data-i18n="settings.output">默认输出目录</span>
+          <span class="field-group">
+            <input id="set-output" class="field grow" type="text" spellcheck="false">
+            <button id="set-pick" class="btn" type="button" data-i18n="btn.pick">选择…</button>
+          </span>
+        </label>
+        <label class="field-row">
+          <span data-i18n="settings.concurrency">并发下载数</span>
+          <span class="field-group">
+            <input id="set-concurrency" class="field tiny" type="number" min="1" max="10" value="3" aria-label="并发下载数" data-i18n-aria="settings.concurrency">
+            <span class="hint" data-i18n="settings.concurrencyHint">1–10，默认 3</span>
+          </span>
+        </label>
+        <div class="field-row">
+          <span data-i18n="settings.defaults">默认选项</span>
+          <span class="field-group">
+            <label class="check"><input id="set-beautify" type="checkbox"> <span data-i18n="opt.beautify">美化</span></label>
+            <label class="check"><input id="set-verify" type="checkbox"> <span data-i18n="opt.verify">校验</span></label>
+          </span>
+        </div>
+        <div class="field-row">
+          <span data-i18n="settings.language">语言 / Language</span>
+          <span class="field-group segmented" id="lang-group">
+            <button class="seg" data-lang="zh" type="button">中文</button>
+            <button class="seg" data-lang="en" type="button">English</button>
+          </span>
+        </div>
+        <div class="field-row">
+          <span data-i18n="settings.appearance">外观</span>
+          <span class="field-group segmented" id="theme-group">
+            <button class="seg" data-theme="system" type="button" data-i18n="theme.system">跟随系统</button>
+            <button class="seg" data-theme="light" type="button" data-i18n="theme.light">浅色</button>
+            <button class="seg" data-theme="dark" type="button" data-i18n="theme.dark">深色</button>
+          </span>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 data-i18n="settings.env">环境</h3>
+        <dl id="env-facts" class="facts"></dl>
+        <div class="field-row">
+          <span></span>
+          <span class="field-group">
+            <button id="env-reveal" class="btn small" type="button" data-i18n="btn.openData">打开数据目录</button>
+            <button id="env-permission" class="btn small" type="button" hidden data-i18n="btn.grant">授予文件访问权限…</button>
+          </span>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 data-i18n="settings.cache">缓存</h3>
+        <div class="rowline">
+          <span id="cache-facts" class="hint">—</span>
+          <span class="grow"></span>
+          <button id="cache-purge" class="btn small danger" type="button" data-i18n="btn.purge">清理还原产物</button>
+        </div>
+      </section>
+
+
+
+      <section class="section">
+        <h3 data-i18n="settings.api">API 服务</h3>
+        <p class="hint" data-i18n="settings.apiHint">与窗口相互独立；启动后可用 /docs 查看接口文档。</p>
+        <div class="field-row">
+          <span data-i18n="settings.listen">监听</span>
+          <span class="field-group">
+            <input id="svc-host" class="field" type="text" value="127.0.0.1" spellcheck="false" aria-label="地址">
+            <input id="svc-port" class="field tiny" type="number" value="8788" min="1" max="65535" aria-label="端口">
+            <input id="svc-key" class="field grow" type="text" placeholder="访问密钥（可选）" data-i18n-ph="settings.keyPh" spellcheck="false" aria-label="密钥">
+            <button id="svc-start" class="btn small" type="button" data-i18n="btn.start">启动</button>
+            <button id="svc-stop" class="btn small" type="button" disabled data-i18n="btn.stop">停止</button>
+          </span>
+        </div>
+        <p id="svc-state" class="hint" data-i18n="svc.stopped">未运行</p>
+      </section>
+    </div>
+    <footer class="sheet-foot">
+      <span class="hint" data-i18n="settings.savedHint">设置保存在本机，立即生效。</span>
+      <span class="grow"></span>
+      <button class="btn" data-close type="button" data-i18n="btn.close">关闭</button>
+      <button id="settings-save" class="btn primary" type="button" data-i18n="btn.save">保存</button>
+    </footer>
+  </div>
+</div>
+
+<aside id="drawer" class="drawer" hidden aria-label="日志" data-i18n-aria="header.logs">
+  <div class="drawer-head">
+    <span data-i18n="drawer.logs">日志</span>
+    <span class="grow"></span>
+    <button id="log-clear" class="btn quiet small" type="button" data-i18n="btn.clear">清空</button>
+  </div>
+  <ol id="log-list" class="log-list" role="log" aria-live="polite"></ol>
+</aside>
+
+
+<!-- ---------------------------------------------------------- welcome -->
+<div id="modal-welcome" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="welcome-title">
+  <div class="sheet welcome" tabindex="-1">
+    <div class="welcome-hero">
+      <div class="welcome-mark">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="2.5" y="2.5" width="19" height="19" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M7 9.5l3 5 2-3.4 2 3.4 3-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h2 id="welcome-title" data-i18n="welcome.title">欢迎使用 Wxapkg Dump</h2>
+      <p class="hint" data-i18n="welcome.sub">从本机缓存或远程下载，一键还原微信小程序源码。</p>
+    </div>
+    <div class="welcome-social">
+      <a id="welcome-github" class="social-card" href="https://github.com/RYF5584" target="_blank" rel="noreferrer">
+        <svg class="" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" fill="currentColor"/></svg>
+        <span class="social-name">GitHub</span>
+        <span class="social-id">RYF5584</span>
+      </a>
+      <button id="welcome-wechat" class="social-card" type="button">
+        <svg class="" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.047c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088V8.89c-.135-.01-.27-.027-.407-.03zm-2.53 3.274c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.969-.982z" fill="currentColor"/></svg>
+        <span class="social-name">WeChat</span>
+        <span class="social-id">RSCompanyCEO</span>
+      </button>
+      <a id="welcome-telegram" class="social-card" href="https://t.me/ryf5584" target="_blank" rel="noreferrer">
+        <svg class="" viewBox="0 0 24 24" aria-hidden="true"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" fill="currentColor"/></svg>
+        <span class="social-name">Telegram</span>
+        <span class="social-id">ryf5584</span>
+      </a>
+    </div>
+    <footer class="sheet-foot">
+      <span class="grow"></span>
+      <button id="welcome-start" class="btn primary" type="button" data-i18n="welcome.start">开始使用</button>
+    </footer>
+  </div>
+</div>
+
+
+<!-- ------------------------------------------------------ download options -->
+<div id="modal-download" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="download-title">
+  <div class="sheet" tabindex="-1">
+    <header class="sheet-head">
+      <h2 id="download-title" data-i18n="dlg.title">下载选项</h2>
+      <button class="icon-btn" data-close type="button" aria-label="关闭" data-i18n-aria="btn.close">✕</button>
+    </header>
+    <div class="sheet-body">
+      <p id="download-target" class="hint">—</p>
+      <label class="field-row">
+        <span data-i18n="field.output">输出目录</span>
+        <span class="field-group">
+          <input id="download-out" class="field grow" type="text" spellcheck="false" placeholder="留空使用默认目录" data-i18n-ph="field.outputPh">
+          <button id="download-pick" class="btn" type="button" data-i18n="btn.pick">选择…</button>
+        </span>
+      </label>
+      <div class="field-row">
+        <span data-i18n="field.options">选项</span>
+        <span class="field-group">
+          <label class="check"><input id="download-unpack" type="checkbox" checked> <span data-i18n="opt.unpack">下载后还原</span></label>
+          <label class="check"><input id="download-beautify" type="checkbox" checked> <span data-i18n="opt.beautify">美化</span></label>
+          <label class="check" title="包含 type 0/22 等资源全量包，体积可能翻数倍"><input id="download-all" type="checkbox"> <span data-i18n="opt.allPackages">资源包（体积大）</span></label>
+        </span>
+      </div>
+      <p class="hint" data-i18n="dlg.hint">下载完成后可直接在下载记录里还原或导出。</p>
+    </div>
+    <footer class="sheet-foot">
+      <span class="grow"></span>
+      <button class="btn" data-close type="button" data-i18n="btn.close">关闭</button>
+      <button id="download-run" class="btn primary" type="button" data-i18n="dlg.start">开始下载</button>
+    </footer>
+  </div>
+</div>
+
+<div id="menu" class="menu" hidden role="menu"></div>
+
+<div id="toasts" class="toasts" aria-live="polite" aria-atomic="false"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

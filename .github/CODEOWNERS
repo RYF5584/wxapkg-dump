@@ -1,0 +1,5 @@
+# Default owner for everything in the repository.
+*                       @RYF5584
+
+# Release plumbing.
+/.github/workflows/     @RYF5584

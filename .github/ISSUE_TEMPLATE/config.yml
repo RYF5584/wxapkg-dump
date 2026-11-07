@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 安全漏洞（私有）
+    url: https://github.com/RYF5584/wxapkg-dump/security/advisories/new
+    about: 请勿通过公开 issue 报告安全问题。
+  - name: 使用与合规边界
+    url: https://github.com/RYF5584/wxapkg-dump/blob/main/DISCLAIMER.md
+    about: 先确认你的用途在授权范围内。

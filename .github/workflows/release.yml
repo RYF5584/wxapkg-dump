@@ -1,0 +1,157 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            platform: macos-arm64
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            platform: macos-x64
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            platform: linux-x64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            platform: windows-x64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Install GUI dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf \
+            libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libgtk-3-dev libssl-dev pkg-config
+
+      - name: Build CLI
+        run: cargo build --release --target ${{ matrix.target }} -p wxapkg-cli
+
+      - name: Build desktop GUI (Windows / Linux)
+        if: matrix.os != 'macos-latest'
+        shell: bash
+        run: |
+          cd crates/wxapkg-gui
+          cargo build --release --target ${{ matrix.target }}
+
+      - name: Install Tauri CLI (macOS)
+        if: matrix.os == 'macos-latest'
+        run: cargo install tauri-cli --version "^2" --locked
+
+      - name: Build desktop app and DMG (macOS)
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        working-directory: crates/wxapkg-gui
+        run: cargo tauri build --target ${{ matrix.target }} --bundles dmg
+
+      - name: Package
+        shell: bash
+        run: |
+          set -euo pipefail
+          ext=""
+          [ "${{ matrix.os }}" = "windows-latest" ] && ext=".exe"
+          cli="target/${{ matrix.target }}/release/wxapkg-dump${ext}"
+          gui="crates/wxapkg-gui/target/${{ matrix.target }}/release/wxapkg-dump-gui${ext}"
+          mkdir -p dist
+
+          populate_cli() {
+            stage="$1"
+            mkdir -p "$stage/completions" "$stage/docs"
+            cp "$cli" "$stage/wxapkg-dump${ext}"
+            cp README.md README.en.md LICENSE DISCLAIMER.md "$stage/"
+            cp docs/*.md docs/wxapkg-dump.1 "$stage/docs/"
+            for shell in bash zsh fish powershell elvish; do
+              "$cli" completions "$shell" > "$stage/completions/wxapkg-dump.$shell"
+            done
+          }
+
+          populate_gui() {
+            stage="$1"
+            mkdir -p "$stage/docs"
+            cp "$gui" "$stage/wxapkg-dump-gui${ext}"
+            cp README.md README.en.md LICENSE DISCLAIMER.md "$stage/"
+            cp docs/*.md docs/wxapkg-dump.1 "$stage/docs/"
+          }
+
+          case "${{ matrix.platform }}" in
+            macos-*)
+              arch="${{ matrix.platform }}"
+              arch="${arch#macos-}"
+              name="wxapkg-dump-macos-${arch}"
+              populate_cli staging-cli
+              tar -C staging-cli -czf "dist/${name}.tar.gz" .
+              dmg=$(find crates/wxapkg-gui/target/${{ matrix.target }}/release/bundle/dmg -name '*.dmg' -print -quit)
+              test -n "$dmg"
+              cp "$dmg" "dist/${name}.dmg"
+              ;;
+            linux-*)
+              populate_cli staging-cli
+              tar -C staging-cli -czf "dist/wxapkg-dump-linux-x64.tar.gz" .
+              populate_gui staging-gui
+              tar -C staging-gui -czf "dist/wxapkg-dump-gui-linux-x64.tar.gz" .
+              ;;
+            windows-*)
+              populate_cli staging-cli
+              (cd staging-cli && 7z a -tzip "../dist/wxapkg-dump-windows-x64.zip" . >/dev/null)
+              populate_gui staging-gui
+              (cd staging-gui && 7z a -tzip "../dist/wxapkg-dump-gui-windows-x64.zip" . >/dev/null)
+              ;;
+          esac
+
+          if command -v sha256sum >/dev/null 2>&1; then
+            (cd dist && sha256sum * > "SHA256SUMS-${{ matrix.platform }}.txt")
+          else
+            (cd dist && shasum -a 256 * > "SHA256SUMS-${{ matrix.platform }}.txt")
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: dist
+
+      - name: Combine checksums
+        run: |
+          cd dist
+          cat SHA256SUMS-*.txt > SHA256SUMS.txt
+          rm -f SHA256SUMS-*.txt
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true

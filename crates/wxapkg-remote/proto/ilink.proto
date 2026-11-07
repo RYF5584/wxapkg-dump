@@ -1,0 +1,484 @@
+syntax = "proto2";
+
+package ilink;
+option go_package = "yybsdk/pb/ilink;ilink";
+
+import "proto/base.proto";
+
+// =============================================================================
+//  ilink2.dll  iLink 协议 protobuf 消息定义 (参考文件)
+//
+//  逆向来源 : ilink2.dll (IDA Pro MCP)
+//  字段号 (field_number) / wire type 经汇编解析函数 (MergePartialFromCodedStream)
+//  的 tag 分派逻辑精确验证, 字段类型为推断。
+//
+//  本文件仅供参考, 实际编解码由 proto.go 手写实现, 不依赖 protoc 生成代码。
+// =============================================================================
+
+
+// ============================  通用结构  =====================================
+
+message IlinkBaseRequest {
+    optional bytes  payload      = 1;  // ilink.BaseRequest 真实 field1 为 bytes
+}
+
+message IlinkBaseResponse {
+    optional int32  ret          = 1;
+    optional string msg          = 2;
+}
+
+message SKBuiltinString_t {
+    optional string value        = 1;
+}
+
+message SKBuiltinBuffer_t {
+    optional uint32 iLen         = 1;
+    optional bytes  buffer       = 2;
+}
+
+message SecECDHKey {
+    optional uint32 key_type     = 1;   // EC 曲线 nid (415 = prime256v1 / secp256r1)
+    optional bytes  ecdh_public_key = 2;
+}
+
+message IlinkAppHeader {
+    optional bool   encrypt_flag  = 1;  // 是否加密
+    optional uint64 uin           = 2;  // 用户 uin
+    optional uint32 cmd_id        = 3;  // CGI 命令号
+    optional bytes  session_key   = 4;  // 会话密钥标识
+    optional uint32 encrypt_type = 5;  // 0=无 16=SessionAES 17=HybridEcdh
+    optional uint32 packing_mode = 6;  // 固定 4
+    optional bytes  device_id    = 7;
+    optional uint32 client_ver   = 8;
+}
+
+
+// ============================  认证相关  =====================================
+
+message AutoAuthRequest {
+    optional IlinkBaseRequest base_request = 1;
+    optional uint32      scene         = 2;
+    optional bytes       autoauth_key  = 3;  // 加密的认证体
+    optional bytes       extra_buffer  = 4;
+}
+
+message AutoAuthResponse {
+    optional IlinkBaseResponse base_response = 1;
+    optional UnifyAuthResponse  auth_sect    = 2;
+}
+
+message ManualAuthRequest {
+    optional IlinkBaseRequest base_request   = 1;
+    optional uint32      auth_request_type   = 2;
+    optional bytes       verify_buffer       = 3;
+    optional uint32      hard_dev_type       = 4;
+    optional bytes       ilink_device_info   = 5;
+    optional bytes       soft_type           = 6;
+    optional uint32      session_type        = 7;
+    optional uint32      session_module_type = 8;
+    optional uint32      field9              = 9;
+    optional bytes       manual_auth_common  = 10;
+    optional bytes       sync_check_key      = 11;
+}
+
+message ManualAuthResponse {
+    optional IlinkBaseResponse base_response = 1;
+    optional UnifyAuthResponse auth_sect     = 3;
+}
+
+message UnifyAuthResponse {
+    optional uint32           timestamp   = 1;
+    optional AuthSectResp     auth_sect   = 2;
+    optional AcctSectResponse acct_sect   = 3;
+    optional uint32           server_time = 4;
+    optional NetworkSectResp  net_sect    = 5;
+}
+
+message AuthSectResp {
+    optional bytes  open_id       = 1;
+    optional bytes  extspam_data1 = 2;
+    optional bytes  extspam_data2 = 3;
+    optional bytes  extspam_data3 = 4;
+    optional uint32 auth_type     = 5;
+    optional uint64 uin           = 6;
+    optional uint64 wxid_uin      = 7;
+    optional bytes  nickname      = 8;
+    optional bytes  ext_buf       = 9;
+    optional uint32 expire_time   = 10;
+    optional uint32 field11       = 11;
+}
+
+message AcctSectResponse {
+    optional uint64  uin      = 1;
+    optional string  wxid     = 2;
+    optional bytes   field3   = 3;
+    optional bytes   field4   = 4;
+    optional uint32  field5   = 5;
+    optional bytes   field6   = 6;
+    optional bytes   field7   = 7;
+    optional uint64  field8   = 8;
+    optional uint64  field9   = 9;
+    optional uint64  field10  = 10;
+}
+
+message NetworkSectResp {
+    repeated HostInfo host_list = 1;
+    optional uint32   port      = 2;
+}
+
+message HostInfo {
+    optional bytes  host     = 1;
+    optional bytes  field2   = 2;
+    repeated IPInfo ip_list  = 3;
+}
+
+message IPInfo {
+    optional uint32 port     = 1;
+    optional bytes  ip       = 2;
+    optional bytes  field3   = 3;
+}
+
+
+// ============================  ECDH 握手  ====================================
+
+message HybridEcdhRequest {
+    optional uint32     version        = 1;  // EC curve nid (415 = prime256v1 / secp256r1)
+    optional SecECDHKey  ecdh_key       = 2;  // 客户端临时公钥
+    optional bytes      encrypted_body  = 3;  // AES-GCM, ECDH 密钥
+    optional bytes      encrypted_body2 = 4;  // AES-GCM, 静态公钥 (可选双层)
+    optional bytes      extra           = 5;  // HKDF 密钥加密的实际数据
+}
+
+message HybridEcdhResponse {
+    optional SecECDHKey  ecdh_key  = 1;
+    optional uint32      version  = 2;
+    optional bytes      enc_data1 = 3;
+    optional bytes      enc_data2 = 4;
+}
+
+
+// ============================  二维码登录  ====================================
+
+message IlinkGetLoginQrCodeRequest {
+    optional int32 request_type = 1;
+    optional bytes inner_req    = 2;
+}
+
+message IlinkGetLoginQrCodeResponse {
+    optional bytes inner_resp = 1;
+}
+
+message GetLoginQrCodeReq {
+    optional uint32 app_id      = 1;
+    optional uint32 login_scene = 2;
+    optional bytes  device_id   = 3;
+}
+
+message GetLoginQrCodeResp {
+    optional IlinkBaseResponse base_info = 1;
+    optional bytes        qr_data   = 2;
+    optional string       uuid      = 3;
+}
+
+message CheckLoginQrCodeReq {
+    optional uint32 poll_scene = 1;
+    optional string uuid       = 2;
+}
+
+message CheckLoginQrCodeResp {
+    optional IlinkBaseResponse base_info = 1;
+    optional LoginQrCodeNotify notify   = 2;
+}
+
+message LoginQrCodeNotify {
+    optional string uuid          = 1;
+    optional int32  status        = 2;
+    optional int64  uin           = 3;
+    optional string nick_name     = 4;
+    optional string head_img_url  = 5;
+    optional string verify_ticket = 6;
+    optional bytes  session_key   = 7;
+}
+
+// ============================  OAuth  ====================================
+
+message IlinkGetOauthCodeRequest {
+    optional IlinkBaseRequest base_request = 1;
+    optional string oauth_appid            = 2;
+}
+
+message IlinkGetOauthCodeResponse {
+    optional IlinkBaseResponse base_response = 1;
+    optional string oauth_code               = 2;
+}
+
+message IlinkCancelOauthRequest {
+    optional IlinkBaseRequest base_request = 1;
+    optional string oauth_appid            = 2;
+}
+
+message IlinkCancelOauthResponse {
+    optional IlinkBaseResponse base_response = 1;
+}
+
+message IlinkRegisterPushTokenRequest {
+    optional IlinkBaseRequest base_request = 1;
+    optional bytes push_token              = 2;
+}
+
+message IlinkRegisterPushTokenResponse {
+    optional IlinkBaseResponse base_response = 1;
+}
+
+// ============================  JS-API / H5  =================================
+
+message IlinkJsApiRequest {
+    optional string  api          = 1;   // jsapi 名称
+    optional string  request_data = 2;   // jsapi 参数 (JSON)
+    optional uint32  api_type     = 3;
+    optional uint32  flag         = 4;
+}
+
+message IlinkJsApiResponse {
+    optional uint32  ret      = 1;   // 0=成功
+    optional string  ret_msg  = 2;
+    optional string  body     = 3;   // 返回数据 (JSON, 含 jslogin)
+}
+
+message IlinkH5TransferRequest {
+    optional MMBaseRequest     base_request   = 1;
+    optional IlinkJsApiRequest  jsapi_request  = 2;
+    optional SKBuiltinBuffer_t  buffer         = 3;
+    optional string             request_url    = 4;
+    optional string             body           = 5;
+    optional uint32             flag1          = 6;
+    optional uint32             flag2          = 7;
+    optional uint32             flag3          = 8;
+}
+
+message IlinkH5TransferResponse {
+    optional MMBaseResponse    base_response   = 1;
+    optional IlinkJsApiResponse jsapi_response = 2;
+}
+
+message MMBaseRequest {
+    optional bytes  session_key    = 1;
+    optional uint32 uin            = 2;
+    optional bytes  device_id      = 3;
+    optional uint32 client_ver    = 4;
+    optional bytes  device_type   = 5;
+    optional uint32 scene          = 6;
+}
+
+message MMBaseResponse {
+    // 微信 BaseResponse.ret 是有符号的（A8Key 失败会回 -2005），用 uint32 解会直接报
+    // "value out of range"。对齐 WMPF 的 z60.g:I（i84.e = varint int）。
+    optional int32            ret  = 1;
+    optional SKBuiltinString_t msg = 2;
+}
+
+
+// 这里直接引用 (通过 go_package 同一包)
+
+// =============================================================================
+//  flue.dll  OAuth 授权 + A8KeyLite protobuf 消息定义
+//
+//  逆向来源 : flue.dll (IDA Pro MCP)
+//  CGI 路径:
+//    /ilink/ilinkapp/mm/bizoauth/oauth_authorize
+//    /ilink/ilinkapp/mm/bizoauth/oauth_authorize_confirm
+//    /ilink/ilinkapp/mm/ilinkgeta8keylite
+// =============================================================================
+
+
+// ============================  OAuth Authorize  =============================
+
+message OauthAuthorizeReq {
+    optional MMBaseRequest base_request = 1;
+    optional string      oauth_url     = 2;
+    optional string      biz_username  = 3;
+    optional uint32      open_scene    = 4;
+    optional uint32      sub_scene     = 5;
+}
+
+message OauthScopeInfo {
+    optional string scope       = 1;
+    optional uint32 state       = 2;
+    optional string desc       = 3;
+    optional string ext_desc   = 4;
+    optional string auth_desc  = 5;
+    optional string detail_desc = 6;
+    optional string title      = 7;
+    optional uint32 ext_state  = 8;
+    optional bool   is_sns     = 9;
+}
+
+message OauthAuthorizeResp {
+    optional MMBaseResponse  base_response       = 1;
+    repeated OauthScopeInfo  scope_list           = 2;
+    optional string          appname             = 4;
+    optional string          appicon_url         = 5;
+    optional string          redirect_url        = 6;
+    optional bool            is_recent_has_auth  = 9;
+    optional bool            is_silent_auth      = 10;
+    optional bool            is_call_server_when_confirm = 11;
+}
+
+message OauthAuthorizeConfirmReq {
+    optional MMBaseRequest base_request = 1;
+    optional uint32      confirm_type = 2;
+    optional string      oauth_url    = 3;
+    optional uint32      open_scene   = 4;
+    optional uint32      sub_scene    = 5;
+}
+
+message OauthAuthorizeConfirmResp {
+    optional MMBaseResponse base_response = 1;
+    optional string       redirect_url  = 2;
+}
+
+
+// ============================  A8KeyLite  ==================================
+// flue.dll IDA SerializeWithCachedSizes 确认的完整字段映射:
+//
+// GetA8KeyLiteReqInfo (12 fields):
+//   field 1  (varint): opcode
+//   field 2  (string): req_url
+//   field 3  (string): field3
+//   field 4  (string): field4
+//   field 5  (string): field5
+//   field 6  (string): field6
+//   field 7  (string): field7
+//   field 8  (varint): field8
+//   field 9  (varint): field9
+//   field 10 (reserved)
+//   field 11 (varint): field11
+//   field 12 (varint): field12
+//   field 13 (nested MMBaseRequest): base_request
+//
+// GetA8KeyLiteRequest (10 fields):
+//   field 1  (nested GetA8KeyLiteReqInfo): req_info
+//   field 2  (varint): field2 (scene?)
+//   field 3  (varint): field3 (opcode?)
+//   field 4  (varint): field4
+//   field 5  (varint): field5
+//   field 6  (string): field6 (username?)
+//   field 7  (string): field7
+//   field 8  (varint): field8
+//   field 9  (repeated nested): field9_list
+//   field 10 (repeated string): field10_list
+
+message GetA8KeyLiteReqInfo {
+    optional uint32 opcode       = 1;
+    optional string req_url      = 2;
+    optional string field3       = 3;
+    optional string field4       = 4;
+    optional string field5       = 5;
+    optional string field6       = 6;
+    optional string field7       = 7;
+    optional uint32 field8       = 8;
+    optional uint32 field9       = 9;
+    // field 10 reserved
+    optional uint32 field11      = 11;
+    optional uint32 field12      = 12;
+    optional MMBaseRequest base_request = 13;
+}
+
+message GetA8KeyLiteRequest {
+    optional GetA8KeyLiteReqInfo req_info = 1;
+    optional uint32 field2       = 2;
+    optional uint32 field3       = 3;
+    optional uint32 field4       = 4;
+    optional uint32 field5       = 5;
+    optional string field6       = 6;
+    optional string field7       = 7;
+    optional uint32 field8       = 8;
+    repeated bytes field9_list   = 9;
+    repeated string field10_list = 10;
+}
+
+message GetA8KeyLiteResponse {
+    optional MMBaseResponse base_response = 1;
+    optional string       full_url      = 2;
+    optional string       a8key         = 3;
+    optional string       action_code   = 4;
+    optional string       title         = 5;
+    optional string       content       = 6;
+}
+
+
+// ============================  GetA8Key (真实实现)  =========================
+// 逆向来源: flue.dll SendGetA8KeyRequest
+// 请求体为微信标准 GetA8KeyReq (字段号照 wechat mm.proto)。
+
+message GetA8KeyReq {
+    optional MMBaseRequest    base_request  = 1;
+    optional uint32           op_code       = 2;
+    optional SKBuiltinBuffer_t a2_key       = 3;
+    optional SKBuiltinString_t app_id       = 4;
+    optional SKBuiltinString_t scope        = 5;
+    optional SKBuiltinString_t state        = 6;
+    optional SKBuiltinString_t req_url       = 7;
+    optional string           friend_user_name = 8;
+    optional uint32           friend_qq     = 9;
+    optional uint32           scene         = 10;
+    optional string           user_name     = 11;
+    optional string           bundle_id     = 12;
+    optional bytes            a2_key_new    = 13;
+    optional uint32           reason        = 14;
+    optional uint32           font_scale    = 15;
+    optional uint32           flag          = 16;
+    optional string           net_type      = 17;
+    optional uint32           code_type     = 18;
+    optional uint32           code_version  = 19;
+    optional uint64           request_id     = 20;
+    optional string           function_id   = 21;
+    optional uint32           wallet_region = 22;
+    optional SKBuiltinBuffer_t cookie       = 23;
+    optional string           outer_url     = 24;
+    optional uint32           sub_scene     = 25;
+}
+
+message GetA8KeyResp {
+    optional MMBaseResponse base_response = 1;
+    optional string       full_url      = 2;
+    optional string       a8key         = 3;
+    // WMPF sf1.j 是 int（i84.e = varint），pl1 里当数值打印，不是字符串。
+    optional uint32       action_code   = 4;
+    optional string       title         = 5;
+    optional string       content       = 6;
+    optional bytes        jsapi_permission = 7;   // sf1.m  JSAPIPermissionBitSet
+    optional bytes        general_control  = 8;   // sf1.n  GeneralControlBitSet
+    optional string       user_name     = 9;
+    optional string       share_url     = 15;
+    optional uint32       field16       = 16;     // sf1.q
+    repeated BizScopeInfo biz_scope_info = 17;    // sf1.r
+    optional string       antispam_ticket = 18;
+    optional string       ssid          = 20;
+    optional string       mid           = 21;
+    optional bytes        deep_link_bit_set = 22; // sf1.v  DeepLinkBitSet
+    optional SKBuiltinBuffer_t field23  = 23;      // sf1.w
+    optional uint32       http_header_count = 24;
+    repeated HttpHeader   http_header   = 25;
+    optional string       wording       = 26;
+    optional string       headimg       = 27;
+    optional SKBuiltinBuffer_t cookie   = 28;
+    optional string       menu_wording  = 29;
+    optional SKBuiltinBuffer_t field30  = 30;     // sf1.D
+    optional SKBuiltinBuffer_t field31  = 31;     // sf1.E
+}
+
+// BizScopeInfo (ia0)：GetA8KeyResp.biz_scope_info 的元素。
+message BizScopeInfo {
+    optional string scope        = 1;
+    optional uint32 scope_status = 2;
+    optional string scope_desc   = 3;
+    optional uint32 scope_type   = 4;
+}
+
+// HttpHeader A8Key 响应携带的 HTTP 头(X-WECHAT-KEY/X-WECHAT-UIN/exportkey 等)
+message HttpHeader {
+    optional string key   = 1;
+    optional string value = 2;
+}
+

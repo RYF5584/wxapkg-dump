@@ -1,0 +1,40 @@
+name: 功能建议
+description: 提出一个改进或新功能
+labels: ["enhancement", "triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 你遇到的问题
+      description: 描述场景，而不是直接给方案。「我做不到 X」比「加一个 Y 按钮」更可讨论。
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 你希望的方案
+    validations:
+      required: false
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 你考虑过的替代方案
+    validations:
+      required: false
+  - type: dropdown
+    id: surface
+    attributes:
+      label: 主要涉及
+      options:
+        - 命令行
+        - API 服务
+        - Web 控制台
+        - 容器解析 / 反编译
+        - 远程下载（iLink）
+        - 文档
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        请注意项目边界：不做绕过授权的能力，不内置任何账号信息，不把未使用的能力编进发布产物。

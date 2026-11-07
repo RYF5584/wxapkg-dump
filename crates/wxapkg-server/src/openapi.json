@@ -1,0 +1,1540 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "wxapkg-dump API",
+    "version": "1.0.0",
+    "description": "HTTP interface to the wxapkg-dump toolkit: scan local WeChat Mini Program packages, reconstruct projects, and download packages from the remote service with an authorized account.\n\nEvery response uses one envelope: `{ ok, command, version, protocol, data }` on success and `{ ok, command, version, protocol, error: { code, message, hint } }` on failure. Start the server with `--admin-key` to require `x-admin-key` on `/api/` requests.",
+    "license": {
+      "name": "MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8788",
+      "description": "Default loopback listener"
+    }
+  ],
+  "tags": [
+    {
+      "name": "system",
+      "description": "Runtime information and local data management."
+    },
+    {
+      "name": "local",
+      "description": "Inspect, extract and rebuild packages found on this machine."
+    },
+    {
+      "name": "project",
+      "description": "Read or archive a reconstructed project."
+    },
+    {
+      "name": "remote",
+      "description": "Authorized App Store session, listing and download."
+    },
+    {
+      "name": "events",
+      "description": "Server-sent progress stream."
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "AdminKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-admin-key",
+        "description": "Required only when the server was started with `--admin-key`."
+      }
+    },
+    "schemas": {
+      "Envelope": {
+        "type": "object",
+        "required": [
+          "ok",
+          "command",
+          "version",
+          "protocol"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "command": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "protocol": {
+            "type": "integer",
+            "example": 1
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "error": {
+            "$ref": "#/components/schemas/Error"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Stable machine-readable identifier.",
+            "example": "invalid_argument"
+          },
+          "message": {
+            "type": "string"
+          },
+          "hint": {
+            "type": "string"
+          }
+        }
+      },
+      "Program": {
+        "type": "object",
+        "properties": {
+          "appid": {
+            "type": "string",
+            "example": "wx069ba97219f66d99"
+          },
+          "version": {
+            "type": "string"
+          },
+          "packages": {
+            "type": "integer"
+          },
+          "totalSize": {
+            "type": "integer"
+          },
+          "encrypted": {
+            "type": "boolean"
+          },
+          "location": {
+            "type": "string"
+          },
+          "modifiedAt": {
+            "type": "integer"
+          }
+        }
+      },
+      "UnpackOptions": {
+        "type": "object",
+        "properties": {
+          "keepRaw": {
+            "type": "boolean",
+            "default": true
+          },
+          "decompileWxml": {
+            "type": "boolean",
+            "default": true
+          },
+          "rewriteRequires": {
+            "type": "boolean",
+            "default": true
+          },
+          "prune": {
+            "type": "boolean",
+            "default": true
+          },
+          "synthesize": {
+            "type": "boolean",
+            "default": true
+          },
+          "pluginClean": {
+            "type": "boolean",
+            "default": true
+          },
+          "plugins": {
+            "type": "string",
+            "enum": [
+              "keep",
+              "placeholder",
+              "strip"
+            ]
+          },
+          "wxssSuffix": {
+            "type": "string"
+          },
+          "autoFix": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      "UnpackRequest": {
+        "type": "object",
+        "properties": {
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Containers, ZIP archives or directories. Not required when `appid` is set."
+          },
+          "appid": {
+            "type": "string",
+            "description": "Locate the package in the local WeChat cache."
+          },
+          "version": {
+            "type": "string",
+            "description": "Restrict `appid` to one version directory."
+          },
+          "out": {
+            "type": "string",
+            "description": "Output directory; relative paths resolve against the workspace."
+          },
+          "wxid": {
+            "type": "string",
+            "description": "Decryption key for `V1MMWX` containers."
+          },
+          "main": {
+            "type": "string",
+            "description": "Explicit main package file name."
+          },
+          "clean": {
+            "type": "boolean",
+            "default": false
+          },
+          "options": {
+            "$ref": "#/components/schemas/UnpackOptions"
+          },
+          "beautify": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Formatting options; omit to keep the reconstructed sources unformatted."
+          }
+        }
+      },
+      "DownloadRequest": {
+        "type": "object",
+        "properties": {
+          "appid": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string",
+            "description": "Original id such as `gh_…@app`."
+          },
+          "out": {
+            "type": "string"
+          },
+          "versionType": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              2,
+              999
+            ],
+            "default": 0
+          },
+          "version": {
+            "type": "integer",
+            "default": 0
+          },
+          "devUin": {
+            "type": "integer"
+          },
+          "zip": {
+            "type": "boolean",
+            "default": true
+          },
+          "unpack": {
+            "type": "boolean",
+            "default": false
+          },
+          "beautify": {
+            "type": "boolean",
+            "default": false
+          },
+          "allPackages": {
+            "type": "boolean",
+            "default": false,
+            "description": "Also download resource widgets (type 0/22); can be hundreds of megabytes."
+          },
+          "concurrency": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10,
+            "default": 3,
+            "description": "Parallel package downloads (1-10)."
+          }
+        }
+      },
+      "TargetRequest": {
+        "type": "object",
+        "properties": {
+          "appid": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        }
+      },
+      "LoginQrRequest": {
+        "type": "object",
+        "properties": {
+          "loginId": {
+            "type": "string",
+            "default": "default"
+          },
+          "proxy": {
+            "type": "string"
+          }
+        }
+      },
+      "LoginCheckRequest": {
+        "type": "object",
+        "required": [
+          "sessionId"
+        ],
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          }
+        }
+      },
+      "Issue": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "Verify": {
+        "type": "object",
+        "properties": {
+          "root": {
+            "type": "string"
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            }
+          },
+          "stats": {
+            "type": "object"
+          },
+          "syntaxChecked": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "AdminKey": []
+    },
+    {}
+  ],
+  "paths": {
+    "/api/beautify": {
+      "post": {
+        "tags": [
+          "local"
+        ],
+        "summary": "Reformat a reconstructed project in place",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "path"
+                ],
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  },
+                  "indentWidth": {
+                    "type": "integer",
+                    "default": 2
+                  },
+                  "useTabs": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "maxWidth": {
+                    "type": "integer",
+                    "default": 110
+                  },
+                  "collapseLines": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Formatting report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "beautify_post"
+      }
+    },
+    "/api/cache": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Report reconstructed artifacts kept in the workspace",
+        "responses": {
+          "200": {
+            "description": "Cache report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "cache_get"
+      },
+      "delete": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Remove reconstructed artifacts from the workspace",
+        "responses": {
+          "200": {
+            "description": "Removal report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "cache_delete"
+      }
+    },
+    "/api/config": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Effective runtime configuration",
+        "responses": {
+          "200": {
+            "description": "Configuration.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "config_get"
+      }
+    },
+    "/api/decrypt": {
+      "post": {
+        "summary": "Decrypt every container in a folder, rotating the given keys",
+        "description": "Walks the folder for .wxapkg/.wxapkg2 files. Encrypted (V1MMWX) containers try each key in `keys` (then a path-derived guess); plain containers are copied through so the output is a complete usable set.",
+        "operationId": "decryptFolder",
+        "tags": [
+          "local"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "folder"
+                ],
+                "properties": {
+                  "folder": {
+                    "type": "string"
+                  },
+                  "keys": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Appids (wx + 16 chars); each container tries them in turn."
+                  },
+                  "out": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Per-file outcomes and totals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/environment": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Search roots, storage paths and remote-engine availability",
+        "responses": {
+          "200": {
+            "description": "Environment report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "environment_get"
+      }
+    },
+    "/api/events": {
+      "get": {
+        "tags": [
+          "events"
+        ],
+        "summary": "Server-sent progress events",
+        "description": "One `data:` frame per event, each carrying a JSON object with `level`, `message` and `at`.",
+        "responses": {
+          "200": {
+            "description": "Event stream.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "events_get"
+      }
+    },
+    "/api/health": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Liveness probe",
+        "responses": {
+          "200": {
+            "description": "Server is up.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "health_get"
+      }
+    },
+    "/api/ilink/account": {
+      "delete": {
+        "summary": "Delete the signed-in account and its caches",
+        "operationId": "deleteIlinkAccount",
+        "tags": [
+          "remote"
+        ],
+        "responses": {
+          "200": {
+            "description": "The account is gone; deleting again is a no-op",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ilink/download": {
+      "post": {
+        "tags": [
+          "remote"
+        ],
+        "summary": "Download packages, optionally unpacking them",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DownloadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Download report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "ilink_download_post"
+      }
+    },
+    "/api/ilink/icons/{name}": {
+      "get": {
+        "tags": [
+          "remote"
+        ],
+        "summary": "Cached icon bytes",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image bytes."
+          },
+          "404": {
+            "description": "Icon not cached."
+          }
+        },
+        "operationId": "ilink_icons_{name}_get"
+      }
+    },
+    "/api/ilink/info": {
+      "post": {
+        "tags": [
+          "remote"
+        ],
+        "summary": "Basic attributes of one Mini Program",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TargetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Attributes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "ilink_info_post"
+      }
+    },
+    "/api/ilink/login/check": {
+      "post": {
+        "tags": [
+          "remote"
+        ],
+        "summary": "Poll a QR login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginCheckRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login state: `pending`, `scanned`, `confirmed` or `expired`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "ilink_login_check_post"
+      }
+    },
+    "/api/ilink/login/qr": {
+      "post": {
+        "tags": [
+          "remote"
+        ],
+        "summary": "Issue a QR login (single account; a confirmed scan replaces it)",
+        "description": "Returns a `sessionId` plus the QR payload. Render it with `/api/ilink/qr.svg?sessionId=…` and poll `/api/ilink/login/check`.",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "description": "Empty; a login no longer names an account"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login session started.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The remote engine is not available."
+          }
+        },
+        "operationId": "ilink_login_qr_post"
+      }
+    },
+    "/api/ilink/qr.svg": {
+      "get": {
+        "tags": [
+          "remote"
+        ],
+        "summary": "QR code as SVG",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          },
+          {
+            "name": "content",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "Raw payload, used when no session is given."
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SVG document.",
+            "content": {
+              "image/svg+xml": {}
+            }
+          },
+          "404": {
+            "description": "Unknown session."
+          }
+        },
+        "operationId": "ilink_qr.svg_get"
+      }
+    },
+    "/api/ilink/recent": {
+      "get": {
+        "tags": [
+          "remote"
+        ],
+        "summary": "Recently used Mini Programs",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            },
+            "description": "1-based page number",
+            "required": false
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "Entries per page",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usage list with names, original ids and cached icons.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "ilink_recent_get"
+      }
+    },
+    "/api/ilink/status": {
+      "get": {
+        "tags": [
+          "remote"
+        ],
+        "summary": "Bridge availability and cached account summary",
+        "responses": {
+          "200": {
+            "description": "Status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "ilink_status_get"
+      }
+    },
+    "/api/inspect": {
+      "post": {
+        "tags": [
+          "local"
+        ],
+        "summary": "Describe one or more containers without writing anything",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "paths"
+                ],
+                "properties": {
+                  "paths": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "wxid": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Container summaries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "inspect_post"
+      }
+    },
+    "/api/programs": {
+      "get": {
+        "tags": [
+          "local"
+        ],
+        "summary": "Cached program listing with icons and bundle details",
+        "parameters": [
+          {
+            "name": "refresh",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "required": false
+          },
+          {
+            "name": "appid",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Program listing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "programs_get"
+      }
+    },
+    "/api/programs/export": {
+      "post": {
+        "tags": [
+          "local"
+        ],
+        "summary": "Unpack one program",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "appid"
+                ],
+                "properties": {
+                  "appid": {
+                    "type": "string"
+                  },
+                  "version": {
+                    "type": "string"
+                  },
+                  "out": {
+                    "type": "string"
+                  },
+                  "beautify": {
+                    "oneOf": [
+                      {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "true applies the default formatting"
+                      },
+                      {
+                        "type": "object",
+                        "description": "Explicit formatting options",
+                        "properties": {
+                          "indentWidth": {
+                            "type": "integer"
+                          },
+                          "useTabs": {
+                            "type": "boolean"
+                          },
+                          "maxWidth": {
+                            "type": "integer"
+                          },
+                          "sortWxmlAttrs": {
+                            "type": "boolean"
+                          },
+                          "styleOneDeclPerLine": {
+                            "type": "boolean"
+                          },
+                          "preserveLineBreaks": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    ],
+                    "description": "Beautify the reconstructed sources. A boolean toggle or an options object."
+                  },
+                  "verify": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Unpack report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "programs_export_post"
+      }
+    },
+    "/api/programs/export-batch": {
+      "post": {
+        "tags": [
+          "local"
+        ],
+        "summary": "Unpack several programs",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "appids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "out": {
+                    "type": "string"
+                  },
+                  "beautify": {
+                    "type": "boolean"
+                  },
+                  "verify": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Per-program results.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "programs_export_batch_post"
+      }
+    },
+    "/api/programs/{appid}/icon": {
+      "get": {
+        "tags": [
+          "local"
+        ],
+        "summary": "Program icon extracted from the local cache",
+        "parameters": [
+          {
+            "name": "appid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image bytes.",
+            "content": {
+              "image/png": {}
+            }
+          },
+          "404": {
+            "description": "No icon was found."
+          }
+        },
+        "operationId": "programs_{appid}_icon_get"
+      }
+    },
+    "/api/programs/{appid}/raw/{name}": {
+      "get": {
+        "tags": [
+          "local"
+        ],
+        "summary": "Read one entry from a cached container",
+        "parameters": [
+          {
+            "name": "appid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entry bytes."
+          },
+          "404": {
+            "description": "Entry not found."
+          }
+        },
+        "operationId": "programs_{appid}_raw_{name}_get"
+      }
+    },
+    "/api/project/download": {
+      "get": {
+        "tags": [
+          "project"
+        ],
+        "summary": "Stream an existing project archive",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ZIP bytes.",
+            "content": {
+              "application/zip": {}
+            }
+          }
+        },
+        "operationId": "project_download_get"
+      }
+    },
+    "/api/project/file": {
+      "get": {
+        "tags": [
+          "project"
+        ],
+        "summary": "Read one project file",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File contents.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "project_file_get"
+      }
+    },
+    "/api/project/tree": {
+      "get": {
+        "tags": [
+          "project"
+        ],
+        "summary": "Directory tree of a reconstructed project",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "depth",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 3
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tree.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "project_tree_get"
+      }
+    },
+    "/api/project/zip": {
+      "post": {
+        "tags": [
+          "project"
+        ],
+        "summary": "Archive a project into a ZIP file",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "path"
+                ],
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  },
+                  "out": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Archive location and size.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "project_zip_post"
+      }
+    },
+    "/api/raw": {
+      "post": {
+        "tags": [
+          "local"
+        ],
+        "summary": "Dump container contents without decompiling",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "paths",
+                  "out"
+                ],
+                "properties": {
+                  "paths": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "out": {
+                    "type": "string"
+                  },
+                  "wxid": {
+                    "type": "string"
+                  },
+                  "autoInflate": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Extraction report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "raw_post"
+      }
+    },
+    "/api/reveal": {
+      "post": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Show a workspace path in the platform file manager",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Path revealed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The path is outside the workspace or does not exist."
+          }
+        },
+        "operationId": "reveal_post"
+      }
+    },
+    "/api/scan": {
+      "get": {
+        "tags": [
+          "local"
+        ],
+        "summary": "List Mini Programs installed by the WeChat client",
+        "parameters": [
+          {
+            "name": "appid",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Programs found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "scan_get"
+      }
+    },
+    "/api/unpack": {
+      "post": {
+        "tags": [
+          "local"
+        ],
+        "summary": "Reconstruct a project the WeChat DevTools can open",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnpackRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Unpack report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Neither `paths` nor `appid` was supplied."
+          }
+        },
+        "operationId": "unpack_post"
+      }
+    },
+    "/api/verify": {
+      "post": {
+        "tags": [
+          "local"
+        ],
+        "summary": "Validate a reconstructed project",
+        "description": "Structural checks over app.json, page files, require/import resolution and delimiter balance. With node=true a real JavaScript syntax check runs too.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "dir"
+                ],
+                "properties": {
+                  "dir": {
+                    "type": "string",
+                    "description": "Project directory to validate."
+                  },
+                  "node": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Run node --check over every .js/.wxs file."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The operation report, wrapped in the standard envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Verify"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed."
+          },
+          "500": {
+            "description": "The operation failed."
+          }
+        },
+        "operationId": "verify_post"
+      }
+    },
+    "/api/version": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Build and protocol version",
+        "responses": {
+          "200": {
+            "description": "Version information.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "version_get"
+      }
+    }
+  }
+}

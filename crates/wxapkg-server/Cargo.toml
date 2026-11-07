@@ -1,0 +1,52 @@
+[package]
+name = "wxapkg-server"
+description = "HTTP API for wxapkg-dump: every capability of the toolkit over one envelope."
+keywords.workspace = true
+categories.workspace = true
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+
+[features]
+default = ["remote"]
+# Authorized remote download, implemented natively.
+remote = ["dep:wxapkg-remote"]
+
+[lib]
+name = "wxapkg_server"
+path = "src/lib.rs"
+
+[dependencies]
+wxapkg-core = { workspace = true }
+wxapkg-remote = { workspace = true, optional = true }
+base64 = { workspace = true }
+
+axum = { workspace = true }
+# `io-util` is required to stream large artifacts off disk without buffering them.
+tokio = { workspace = true, features = ["io-util"] }
+tower = { workspace = true }
+tower-http = { workspace = true }
+tokio-stream = { workspace = true }
+futures-core = { workspace = true }
+qrcode = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+directories = { workspace = true }
+clap = { workspace = true }
+walkdir = { workspace = true }
+zip = { workspace = true }
+utoipa-swagger-ui = { version = "9.0.2", features = ["axum", "vendored"] }
+utoipa = "5"
+
+[dev-dependencies]
+tempfile = { workspace = true }
+# `util` brings `ServiceExt::oneshot`, which drives the router without a socket.
+tower = { workspace = true, features = ["util"] }

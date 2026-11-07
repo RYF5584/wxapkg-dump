@@ -1,0 +1,245 @@
+syntax = "proto2";
+package ilink;
+option go_package = "yybsdk/pb/ilink;ilink";
+
+import "proto/base.proto";
+
+// JSLogin 请求 (/cgi-bin/mmbiz-bin/js-login, CGI 1029)
+message JSLoginRequest {
+    optional BaseRequest   baseRequest  = 1;
+    optional string        appid        = 2;
+    optional int32         loginType    = 4;
+    optional int32         versionType  = 7;
+    optional WxaExternalInfo extInfo    = 8;
+}
+
+message SessionInfo {
+    optional BaseRequest base_request = 1;
+    optional string      appid        = 2;
+    optional uint32      field4       = 4;
+    optional bytes       field5       = 5;
+    optional bytes       field6       = 6;
+    optional uint32      field7       = 7;
+}
+
+message WxaBusinessGetruntimesessionResponse {
+    optional BaseResponse baseResponse = 1;
+    optional string       sessionid    = 2;
+    optional uint32       expire_in    = 3;
+}
+
+message JSLoginResponse {
+    optional BaseResponse base_response = 1;
+    optional JSLoginMsg   msg           = 2;
+    optional string       code          = 3; // 登录 code
+    optional string       field11       = 11;
+}
+
+message JSLoginMsg {
+    optional int32  ret = 1;
+    optional string msg = 2;
+}
+
+// operatewxdata 请求 (/cgi-bin/mmbiz-bin/js-operatewxdata, CGI 1133 / 1030)
+message JSOperateWxDataRequest {
+    optional BaseRequest   baseRequest     = 1;
+    optional string        appid           = 2;
+    optional bytes         data            = 3;
+    optional string        grantScope      = 4;
+    optional int32         opt             = 5;
+    optional uint32        versionType     = 6;
+    optional WxaExternalInfo extInfo       = 7;
+}
+
+message JSAPIBaseResponse {
+    optional int32 errcode = 1;
+    optional string errmsg = 2;
+}
+
+message ScopeInfo {
+    optional string scope = 1;
+    optional uint32 state = 2;
+    optional string desc = 3;
+    optional string extDesc = 4;
+    optional string authDesc = 5;
+    optional string detailDesc = 6;
+    optional string title = 7;
+    optional uint32 extState = 8;
+    optional bool isSns = 9;
+}
+
+message JSOperateWxDataResponse {
+    optional BaseResponse baseResponse      = 1;
+    optional JSAPIBaseResponse jsapiBaseresponse = 2;
+    optional bytes        data              = 3;
+    optional ScopeInfo    scope             = 4;
+    optional string       appname           = 5;
+    optional string       appiconUrl        = 6;
+    optional string       cancelWording     = 7;
+    optional string       allowWording      = 8;
+    optional string       applyWording      = 9;
+}
+
+message VerifyPluginRequest {
+    optional BaseRequest   baseRequest     = 1;
+    optional string        appid           = 2;
+    optional string        data            = 3;
+}
+
+message VerifyPluginResponse {
+    optional BaseResponse baseResponse      = 1;
+    optional string       data              = 2;
+}
+
+// OauthAddavatarRequest
+message OauthAddavatarRequest {
+    optional BaseRequest baseRequest = 1;
+    optional string nickname = 2;
+    // optional QYCONTA RIb = 3;
+    optional string afilekey = 4;
+    optional int32 Opcode = 5;
+    optional string appid = 6;
+}
+
+message OauthAddavatarInfo {
+    optional int32 Id = 1;
+    optional string nickname = 2;
+    optional string avatarurl = 3;
+    optional string desc = 4;
+}
+
+message OauthAddavatarResp {
+    optional BaseResponse baseResponse = 1;
+    optional OauthAddavatarInfo Info = 2;
+}
+
+// ModMobileRequest
+message ModMobileRequest {
+    optional BaseRequest baseRequest = 1;
+    optional string appid = 2;
+    optional string mobile = 3;
+    optional int32 t = 4;
+}
+
+message ModMobileResponse {
+    optional BaseResponse baseResponse = 1;
+}
+
+// UpdateWxaUsageRecordRequest
+message UpdateWxaUsageRecordRequest {
+    optional BaseRequest baseRequest = 1;
+    optional uint32 scene = 2;
+    optional uint32 isFromBackground = 3;
+    optional uint32 versionType = 4;
+    optional uint32 recordType = 5;
+    optional uint32 opType = 6;
+    optional string username = 7;
+    optional uint32 rea = 8;
+    optional string cook = 9;
+}
+
+message UpdateWxaUsageRecordResponse {
+    optional BaseResponse baseResponse = 1;
+    optional UpdateWxaUsageRecordWxaappBaseResponse wxaappBaseResponse = 2;
+}
+
+message UpdateWxaUsageRecordWxaappBaseResponse {
+    optional int64 ret = 1;
+}
+
+// CheckVerifyCodeRequest
+message CheckVerifyCodeRequest {
+    optional BaseRequest baseRequest = 1;
+    optional string appid = 2;
+    optional string mobile = 3;
+    optional string verifyCode = 4;
+}
+
+message CheckVerifyCodeResponse {
+    optional BaseResponse baseResponse = 1;
+    optional int32 Status = 2;
+    optional string EncryptedData = 3;
+    optional string Iv = 4;
+    optional string ShowMobile = 5;
+    optional string CloudId = 6;
+}
+
+// PostVerifyCodeRequest
+message PostVerifyCodeRequest {
+    optional BaseRequest baseRequest = 1;
+    optional string appid = 2;
+    optional string mobile = 3;
+}
+
+message PostVerifyCodeResp {
+    optional BaseResponse baseResponse = 1;
+    optional uint32 status = 2;
+}
+
+// OauthGetRandomavatarRequest
+message OauthGetRandomavatarRequest {
+    optional BaseRequest baseRequest = 1;
+    optional string appid = 2;
+}
+
+message OauthGetRandomavatarResp {
+    optional BaseResponse baseResponse = 1;
+    optional string nickname = 2;
+    optional string avatarurl = 3;
+    optional string afilekey = 4;
+}
+
+// MMBizJsApiGetUserOpenIdRequest
+message MMBizJsApiGetUserOpenIdRequest {
+    optional BaseRequest baseRequest = 1;
+    optional string AppId = 2;
+    optional string BusiId = 3;
+    optional string UserName = 4;
+}
+
+message MMBizJsApiGetUserOpenIdResponse {
+    optional BaseResponse baseResponse = 1;
+    optional string Openid = 2;
+    optional string NickName = 3;
+    optional string HeadImgUrl = 4;
+    optional string Sign = 5;
+    optional uint32 FriendRelation = 6;
+}
+
+message WxaAppItem {
+    optional string username = 1;
+    optional uint32 updateTime = 2;
+    optional uint32 versionType = 3;
+    optional int64 order = 4;
+    optional bool isFromOuter = 5;
+    optional string appDesc = 6;
+}
+
+// GetWxAppRecordRequest
+message GetWxAppRecordRequest {
+    optional BaseRequest baseRequest = 1;
+    optional int32 reason = 2;
+    optional int32 condition = 3;
+    optional int32 maxUpdatetime = 4;
+    optional int32 historyCount = 5;
+}
+
+message GetWxAppRecordResponse {
+    optional BaseResponse baseResponse = 1;
+    optional bytes wxaappTTTresponse = 2;
+    repeated WxaAppItem starList = 3;
+    repeated WxaAppItem historyList = 4;
+    optional uint32 status = 5;
+}
+
+// OauthAddavatarImgRequest
+message OauthAddavatarImgRequest {
+    optional BaseRequest baseRequest = 1;
+    optional string jpglink = 2;
+    optional string appid = 3;
+}
+
+message OauthAddavatarImgResp {
+    optional BaseResponse baseResponse = 1;
+    optional string afilekey = 2;
+}

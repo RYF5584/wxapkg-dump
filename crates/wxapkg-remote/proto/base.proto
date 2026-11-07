@@ -1,0 +1,55 @@
+syntax = "proto2";
+package ilink;
+option go_package = "yybsdk/pb/ilink;ilink";
+
+// BaseRequest 通用请求头
+message BaseRequest {
+    optional bytes  sessionKey    = 1;
+    optional uint32 uin           = 2;
+    optional bytes  deviceId      = 3;
+    optional uint32 clientVersion = 4;
+    optional string deviceType    = 5;
+    optional uint32 scene         = 6;
+}
+
+// BaseResponse 通用响应头
+message BaseResponse {
+    optional int32  ret    = 1;
+    optional string errMsg = 2;
+}
+
+// WxaExternalInfo 扩展信息
+message WxaExternalInfo {
+    optional string hostAppid  = 1;
+    optional int32  scene      = 2;
+    optional int32  sourceEnv  = 3;
+}
+
+// 通用的小程序外层包裹请求
+message WxaRuntimeTransferRequest {
+    optional BaseRequest base_request = 1;
+    optional string      cgi_path     = 2;
+    optional string      host_appid   = 3;
+    optional uint32      field4       = 4;
+    optional bytes       req_data     = 5;
+    optional string      appid        = 6;
+    optional uint32      scene        = 7;
+    optional uint32      client_ver2  = 8;
+    optional string      device_type  = 9;
+    optional uint32      sub_ver      = 10;
+}
+
+message WxaSessionInfo {
+    optional BaseRequest base_request = 1;
+    optional string      appid        = 2;
+    optional uint32      field4       = 4;
+    optional bytes       field5       = 5;
+    optional bytes       field6       = 6;
+    optional uint32      field7       = 7;
+}
+
+// 通用的小程序外层包裹响应
+message WxaRuntimeTransferResponse {
+    optional BaseResponse base_response = 1;
+    optional bytes        resp_data     = 2;
+}
