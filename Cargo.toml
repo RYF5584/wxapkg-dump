@@ -89,7 +89,7 @@ anstyle = "1"
 # ---- server ----
 axum = { version = "0.8", features = ["json", "multipart", "macros"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "fs", "signal", "sync", "time"] }
-tower-http = { version = "0.6", features = ["cors", "trace", "limit", "timeout"] }
+tower-http = { version = "0.7", features = ["cors", "trace", "limit", "timeout"] }
 tower = "0.5"
 tokio-stream = { version = "0.1", features = ["sync"] }
 futures-core = "0.3"
