@@ -57,7 +57,7 @@ zip = { version = "2", default-features = false, features = ["deflate"] }
 
 # ---- fs / paths ----
 walkdir = "2"
-directories = "5"
+directories = "6"
 tempfile = "3"
 
 # ---- text ----
