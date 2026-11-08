@@ -28,7 +28,7 @@ jobs:
     name: known vulnerabilities
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       # Installs the tool and fails the job on any advisory that is not explicitly ignored in
       # `deny.toml`. Ignoring one there requires a comment saying why.
@@ -41,7 +41,7 @@ jobs:
     name: licences & bans
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: EmbarkStudios/cargo-deny-action@v2
         with:
