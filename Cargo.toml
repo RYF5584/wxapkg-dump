@@ -83,7 +83,7 @@ clap = { version = "4", features = ["derive", "env", "wrap_help"] }
 clap_complete = "4"
 comfy-table = "7"
 indicatif = "0.18"
-anstream = "0.6"
+anstream = "1.0"
 anstyle = "1"
 
 # ---- server ----
