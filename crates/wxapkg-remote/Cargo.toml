@@ -41,4 +41,4 @@ rustls-backend = ["ureq/tls"]
 
 [build-dependencies]
 prost-build = "0.14.3"
-protox = "0.9.1"
+protox = "0.10.0"
