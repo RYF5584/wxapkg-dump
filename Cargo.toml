@@ -71,7 +71,7 @@ native-tls = "0.2"
 
 # ---- iLink transport (MMTLS) ----
 p256 = { version = "0.14", default-features = false, features = ["ecdh", "getrandom", "std"] }
-aes-gcm = "0.10"
+aes-gcm = "0.11"
 sha2 = "0.10"
 rand = "0.8"
 base64 = "0.23"
