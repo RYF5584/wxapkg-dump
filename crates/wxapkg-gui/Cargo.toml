@@ -1,0 +1,57 @@
+[package]
+name = "wxapkg-dump-gui"
+version = "1.0.0"
+edition = "2021"
+rust-version = "1.90"
+description = "Desktop application for wxapkg-dump, built with Tauri."
+authors = ["wxapkg-dump contributors"]
+license = "MIT"
+repository = "https://github.com/RYF5584/wxapkg-dump"
+publish = false
+
+# This crate is intentionally outside the workspace: building it pulls the whole Tauri
+# toolchain, which the library and CLI builds must not depend on.
+[workspace]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+wxapkg-core = { path = "../wxapkg-core", version = "1.0.0" }
+# Remote download: login, transport, accounts and storage, implemented in Rust. Optional so
+# a build without it keeps scanning, exporting and settings.
+wxapkg-remote = { path = "../wxapkg-remote", version = "1.0.0", optional = true }
+# The public API service is optional and operator-driven: the GUI hosts it on request,
+# but none of the GUI's own functionality goes through HTTP.
+wxapkg-server = { path = "../wxapkg-server", version = "1.0.0" }
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "net", "time"] }
+portpicker = "0.1"
+qrcode = { version = "0.14", default-features = false, features = ["image"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
+base64 = "0.22"
+directories = "5"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[features]
+# Remote download. `--no-default-features` removes it entirely; scanning, exporting, batch
+# export and settings still work.
+default = ["remote"]
+remote = ["dep:wxapkg-remote"]
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+# Unwind, not abort: a panic inside one job becomes an error message instead of
+# killing the whole application while the user is exporting or downloading.
+panic = "unwind"
+strip = true
+
+[dev-dependencies]
+tempfile = "3"

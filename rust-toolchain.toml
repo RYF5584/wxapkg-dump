@@ -1,0 +1,5 @@
+# Track the same stable channel as CI. The minimum supported release is declared by
+# `rust-version` in Cargo.toml.
+[toolchain]
+channel = "stable"
+components = ["rustfmt", "clippy"]

@@ -1,0 +1,125 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/wxapkg-core",
+    "crates/wxapkg-cli",
+    "crates/wxapkg-server",
+    "mcp/wxapkg-mcp",
+    "crates/wxapkg-remote",
+]
+default-members = [
+    "crates/wxapkg-core",
+    "crates/wxapkg-cli",
+    "crates/wxapkg-server",
+    "crates/wxapkg-remote",
+    "mcp/wxapkg-mcp",
+]
+
+[workspace.package]
+version = "1.0.0"
+edition = "2021"
+rust-version = "1.88"
+authors = ["wxapkg-dump contributors"]
+license = "MIT"
+repository = "https://github.com/RYF5584/wxapkg-dump"
+homepage = "https://github.com/RYF5584/wxapkg-dump"
+documentation = "https://github.com/RYF5584/wxapkg-dump/tree/main/docs"
+keywords = ["wxapkg", "wechat", "miniprogram", "decompiler", "reverse-engineering"]
+categories = ["command-line-utilities", "development-tools"]
+description = "WeChat Mini Program package toolkit: local extraction, decompilation, beautification and authorized remote download."
+
+[workspace.dependencies]
+# ---- internal ----
+wxapkg-core = { path = "crates/wxapkg-core", version = "1.0.0" }
+wxapkg-remote = { path = "crates/wxapkg-remote", version = "1.0.0" }
+
+# ---- serialization ----
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+
+# ---- errors / logging ----
+thiserror = "2"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# ---- crypto (V1MMWX) ----
+aes = "0.8"
+cbc = { version = "0.1", features = ["alloc"] }
+pbkdf2 = { version = "0.12", default-features = false, features = ["hmac"] }
+hmac = "0.12"
+sha1 = "0.10"
+hex = "0.4"
+
+# ---- archives / compression ----
+flate2 = "1"
+zip = { version = "9", default-features = false, features = ["deflate"] }
+
+# ---- fs / paths ----
+walkdir = "2"
+directories = "5"
+tempfile = "3"
+
+# ---- text ----
+regex = "1"
+
+# ---- http (remote login) ----
+ureq = { version = "2", default-features = false, features = ["json", "tls"] }
+# System TLS (Security.framework / SChannel / OpenSSL), which ureq needs wired up explicitly
+# when built without rustls.
+native-tls = "0.2"
+
+# ---- iLink transport (MMTLS) ----
+p256 = { version = "0.14", default-features = false, features = ["ecdh", "getrandom", "std"] }
+aes-gcm = "0.10"
+sha2 = "0.10"
+rand = "0.8"
+base64 = "0.23"
+once_cell = "1"
+encoding_rs = "0.8"
+
+# ---- cli ----
+clap = { version = "4", features = ["derive", "env", "wrap_help"] }
+clap_complete = "4"
+comfy-table = "7"
+indicatif = "0.18"
+anstream = "0.6"
+anstyle = "1"
+
+# ---- server ----
+axum = { version = "0.8", features = ["json", "multipart", "macros"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "fs", "signal", "sync", "time"] }
+tower-http = { version = "0.6", features = ["cors", "trace", "limit", "timeout"] }
+tower = "0.5"
+tokio-stream = { version = "0.1", features = ["sync"] }
+futures-core = "0.3"
+
+# ---- qr ----
+qrcode = { version = "0.14", default-features = false, features = ["image", "svg"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
+
+# ---- ffi ----
+libloading = "0.8"
+pretty_assertions = "1"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+
+[profile.release-debug]
+inherits = "release"
+debug = true
+strip = "none"
+panic = "unwind"
+
+[profile.bench]
+inherits = "release"
+lto = "fat"
+
+# Development profile: keep debug info for profiling but opt-in via `--profile dev-opt`.
+[profile.dev-opt]
+inherits = "dev"
+opt-level = 1

@@ -1,0 +1,27 @@
+[package]
+name = "wxapkg-mcp"
+description = "Model Context Protocol server exposing wxapkg-dump to AI assistants."
+keywords.workspace = true
+categories.workspace = true
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+
+[features]
+default = ["remote"]
+remote = ["dep:wxapkg-remote"]
+
+[dependencies]
+wxapkg-core = { workspace = true }
+wxapkg-remote = { workspace = true, optional = true }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

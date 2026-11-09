@@ -1,0 +1,35 @@
+version: 2
+updates:
+  # Rust dependencies. Grouped so a routine bump is one pull request rather than ten.
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      rust-dependencies:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  # The desktop app is a separate workspace with its own lockfile.
+  - package-ecosystem: cargo
+    directory: /crates/wxapkg-gui
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      gui-dependencies:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  # The CI actions themselves. Kept separate: a broken action is a different kind of outage
+  # from a broken dependency.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      github-actions:
+        patterns: ["*"]

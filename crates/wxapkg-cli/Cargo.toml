@@ -1,0 +1,53 @@
+[package]
+name = "wxapkg-cli"
+description = "Command line interface for wxapkg-dump."
+keywords.workspace = true
+categories.workspace = true
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+
+[[bin]]
+name = "wxapkg-dump"
+path = "src/main.rs"
+
+[features]
+default = ["remote"]
+# Authorized remote download, implemented natively.
+remote = ["dep:wxapkg-remote", "wxapkg-mcp/remote"]
+
+[dependencies]
+wxapkg-core = { workspace = true }
+wxapkg-remote = { workspace = true, optional = true }
+qrcode = { workspace = true }
+# The HTTP API lives in the same binary: `wxapkg-dump --server`.
+wxapkg-server = { path = "../wxapkg-server", version = "1.0.0" }
+wxapkg-mcp = { path = "../../mcp/wxapkg-mcp", version = "1.0.0", default-features = false }
+tokio = { workspace = true }
+
+clap = { workspace = true }
+clap_complete = { workspace = true }
+comfy-table = { workspace = true }
+indicatif = { workspace = true }
+anstream = { workspace = true }
+anstyle = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+directories = { workspace = true }
+sys-locale = "0.3"
+console = "0.16"
+chrono = { version = "0.4.45", default-features = false, features = ["clock"] }
+
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "3"
+tempfile = { workspace = true }

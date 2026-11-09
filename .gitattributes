@@ -1,0 +1,7 @@
+# Keep line endings consistent with `.editorconfig` and rustfmt on every platform.
+* text=auto eol=lf
+
+# Assets are binary; never apply end-of-line conversion.
+*.png binary
+*.ico binary
+*.icns binary

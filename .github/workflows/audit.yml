@@ -1,0 +1,47 @@
+name: Audit
+
+# Dependency and licence checks. Separate from CI because a new advisory should not block an
+# unrelated pull request, and because these need network access to a different service.
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "**/Cargo.toml"
+      - ".github/workflows/audit.yml"
+  pull_request:
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "**/Cargo.toml"
+  schedule:
+    # Advisories land continuously; re-check weekly even when nothing changed here.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  advisories:
+    name: known vulnerabilities
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      # Installs the tool and fails the job on any advisory that is not explicitly ignored in
+      # `deny.toml`. Ignoring one there requires a comment saying why.
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check advisories
+
+  licences:
+    name: licences & bans
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check licenses bans sources

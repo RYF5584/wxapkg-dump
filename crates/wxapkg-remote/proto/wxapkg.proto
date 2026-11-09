@@ -1,0 +1,340 @@
+syntax = "proto2";
+package ilink;
+option go_package = "yybsdk/pb/ilink;ilink";
+
+// =============================================================================
+// 小程序 wxapkg 包下载相关 CGI
+// 字段号来自微信 Android 客户端反编译 (com.tencent.mm.plugin.appbrand.appcache):
+//   pregetwxadownloadurl  (cmdid 1189): x85 -> y85, 返回主包+全部分包的下载地址
+//   batchgetwxadownloadurl (cmdid 1713): gf -> hf, 按 (appid, module) 批量获取
+//   getwxacdndownloadurl  (cmdid 1139): kq3 -> lq3, 旧版单包接口 (备用)
+// =============================================================================
+
+import "proto/base.proto";
+
+// ---- pregetwxadownloadurl ----
+
+// 对应客户端 x85
+message PreGetWxaDownloadUrlRequest {
+    optional BaseRequest base_request = 1;
+    optional string username      = 2; // gh_ 原始 ID (与 appid 二选一)
+    optional string appid         = 3; // wx 小程序 appid
+    optional uint32 local_version = 4; // 本地已有主包版本, 无本地缓存传 0
+    optional string enter_path    = 5; // 进入路径, 传空
+    optional uint32 field6        = 6; // 客户端固定传 0
+    optional bool   field7        = 7; // 客户端固定传 true
+}
+
+// 对应客户端 e15: 单个包(主包或分包)的下载信息
+message WxaPackageInfo {
+    optional string appid        = 1;
+    optional string module       = 2; // 分包模块名, 主包为空串
+    optional uint32 package_type = 3;
+    optional uint32 version      = 4;
+    optional string url          = 5;
+    optional string url2         = 6;
+    optional bool   field20      = 20; // 客户端过滤此为 true 的条目
+    optional bool   is_zstd      = 21; // url 内容为 zstd 压缩
+    optional uint32 size         = 22;
+}
+
+// 对应客户端 y85
+message PreGetWxaDownloadUrlResponse {
+    optional BaseResponse base_response = 1;
+    optional string appid   = 2;
+    optional uint32 version = 3;
+    repeated WxaPackageInfo package_info_list = 4;
+}
+
+// ---- batchgetwxadownloadurl ----
+
+// 对应客户端 k50: CGI 请求来源
+message WxaCgiSource {
+    optional uint32 field1 = 1;
+    optional bool   field2 = 2;
+    optional uint32 source_type = 3; // 客户端固定传 1
+    optional uint32 field4 = 4;
+}
+
+// 对应客户端 ro5: 包身份
+message WxaPkgIdentity {
+    optional string appid        = 1;
+    optional string username     = 2;
+    optional string module       = 3; // 分包模块名, 主包为空
+    optional uint32 package_type = 4;
+    optional uint32 version_type = 5; // 0=正式版
+}
+
+// 对应客户端 ca4: 本地已缓存的包信息(用于 patch 增量)
+message WxaLocalPkgInfo {
+    optional uint32 local_version = 1;
+    optional uint32 field2 = 2;
+}
+
+// 对应客户端 jc3: 单个包的下载地址请求项
+message WxaDownloadUrlReqItem {
+    optional WxaPkgIdentity identity          = 1;
+    optional WxaLocalPkgInfo local_info       = 2;
+    optional uint32 field3                    = 3;
+    optional uint32 version                   = 4;
+    optional bool   need_latest_version       = 5;
+    optional bool   need_zstd                 = 6;
+    optional uint32 dev_uin                   = 7; // 体验版/开发版需要
+    optional string version_desc              = 8; // 版本描述
+    optional string field9                    = 9;
+    optional string semver                    = 10;
+}
+
+// 对应客户端 gf
+message BatchGetWxaDownloadUrlRequest {
+    optional BaseRequest base_request = 1;
+    repeated WxaDownloadUrlReqItem req_list = 2;
+    optional uint32 predownload_scene = 3;
+    optional WxaCgiSource source = 4;
+}
+
+// 对应客户端 kc3: 单个包的下载地址响应项
+message WxaDownloadUrlRespItem {
+    optional int32  ret      = 1; // 0 成功, -2000004/-2000011 版本不存在等
+    optional string url      = 2;
+    optional string url2     = 3;
+    optional uint32 field4   = 4;
+    optional uint32 field5   = 5;
+    optional bool   field6   = 6;
+    optional bool   is_zstd  = 7;
+    optional WxaPkgIdentity identity = 8;
+    optional string version_desc = 9;
+    optional string md5      = 10;
+    optional uint32 field23  = 23;
+    optional uint64 field24  = 24;
+}
+
+// 对应客户端 hf
+message BatchGetWxaDownloadUrlResponse {
+    optional BaseResponse base_response = 1;
+    repeated WxaDownloadUrlRespItem resp_list = 2;
+}
+
+// ---- getwxacdndownloadurl (旧版单包, 备用) ----
+
+// 对应客户端 kq3
+message GetWxaAppCDNDownloadUrlRequest {
+    optional BaseRequest base_request = 1;
+    optional uint32 field2       = 2;
+    optional string appid        = 3;
+    optional uint32 version      = 4;
+    optional string field5       = 5;
+    optional uint32 package_type = 6;
+    optional uint32 field7       = 7;
+    optional string module       = 8;
+    optional WxaExternalInfo ext_info = 9;
+    optional uint32 field13      = 13;
+    optional string field14      = 14;
+    optional string field15      = 15;
+    optional bool   field16      = 16;
+    optional bool   field17      = 17;
+    optional uint32 scene        = 18;
+    optional WxaCgiSource source = 19;
+}
+
+// 对应客户端 lq3 (响应字段号待抓包校验, 仅备用)
+message GetWxaAppCDNDownloadUrlResponse {
+    optional BaseResponse base_response = 1;
+    optional string url      = 2;
+    optional string url2     = 3;
+    optional string md5      = 4;
+    optional uint32 size     = 5;
+    optional uint32 version  = 6;
+}
+
+// ---- wxaattr/wxaattrsync (cmdid 1151): 小程序属性/基本信息同步 ----
+// 响应 attrs 为 WxaAttributes 原始 JSON, 含昵称/简介/头像/版本信息/分包模块列表
+
+// 对应客户端 y97
+message WxaAttrSyncRequest {
+    optional BaseRequest base_request    = 1;
+    optional string username             = 2; // gh_ 原始 ID
+    optional bytes  local_version_info   = 3; // 客户端传本地已同步信息, 传空
+    optional string appid                = 4; // wx appid
+    optional string field5               = 5;
+    optional uint32 field6               = 6;
+    optional WxaCgiSource source         = 7;
+}
+
+// 对应客户端 aa7: attrs 为 string->string 键值对 (值多为 JSON)
+message WxaAttrEntry {
+    optional string key   = 1;
+    optional string value = 2;
+}
+
+// 对应客户端 aa7 的 f2: 同步版本信息
+message WxaAttrVersionInfo {
+    optional uint32 field1         = 1; // 观察值 60, 语义待确认
+    optional uint32 client_version = 2;
+    optional uint64 update_time    = 3;
+    optional uint64 sync_time      = 4;
+    optional uint32 version        = 5; // 当前正式版版本号
+}
+
+// 对应客户端 aa7
+message WxaAttrSyncResponse {
+    optional BaseResponse base_response = 1;
+    optional WxaAttrVersionInfo version_info = 2;
+    repeated WxaAttrEntry attrs = 3; // NickName/Signature/WxaAppInfo/WxaAppVersionInfo 等
+    optional string username    = 4;
+}
+
+// ---- mmuxwxa_weappsearch (cmdid 2676): 小程序搜索 ----
+
+// 对应客户端 b77
+message WeappSearchRequest {
+    optional uint32 search_flag        = 1;  // 是否搜索主页入口, 0
+    optional string keyword            = 2;  // 搜索关键词
+    optional uint32 offset             = 3;  // 分页偏移
+    optional uint64 type               = 4;  // 结果类型, 0
+    optional uint32 search_id          = 5;  // 客户端搜索会话 id (非 0)
+    optional WeappSearchLocation ext_info = 6; // LBS 位置上下文
+    repeated uint32 field7             = 7;
+    optional uint32 scene              = 8;  // 搜索场景值, 0
+    optional string search_id_str      = 9;  // 上次搜索返回的 searchId
+    optional uint32 scene_action_type  = 10; // 客户端默认 1
+    optional string sug_id             = 11;
+    optional string prefix_sug         = 12;
+    optional uint32 sug_type           = 13;
+    optional uint32 field15            = 15;
+    optional string session_id         = 21; // 小程序内搜索的 sessionId
+    optional uint32 client_flag        = 26; // 客户端标志
+    optional WeappSearchTeenMode teen_mode = 27; // 青少年模式上下文
+}
+
+// 对应客户端 z20
+message WeappSearchTeenMode {
+    optional uint32 field1 = 1;
+    optional uint32 field2 = 2;
+    optional uint32 field3 = 3;
+    optional bool   enabled = 4; // 是否青少年模式
+}
+
+// 对应客户端 a44: LBS 位置上下文
+message WeappSearchLocation {
+    optional double lat      = 1;
+    optional double lng      = 2;
+    optional uint32 field3   = 3;
+    optional string field4   = 4;
+    optional string field5   = 5;
+    optional uint32 field6   = 6;
+    optional string field7   = 7;
+    optional uint32 flag     = 8;
+}
+
+// 对应客户端 c77: 搜索结果以 JSON 字符串放在 result_json
+message WeappSearchResponse {
+    optional BaseResponse base_response = 1;
+    optional uint32 update_code = 2;
+    optional uint32 offset      = 3;
+    optional string result_json = 4; // 结果 JSON (含小程序列表)
+    optional uint32 result_type = 5;
+}
+
+// ---- getweappbox (cmdid 1869): 小程序盒子/发现页 ----
+
+message WeAppBoxRequest {
+    optional BaseRequest base_request = 1;
+    optional string box_param = 2; // 盒子场景参数, 可空
+}
+
+message WeAppBoxResponse {
+    optional BaseResponse base_response = 1;
+    optional string result_json = 2; // 结果 JSON
+}
+
+// ---- uploaduserlocationinfo (cmdid 1154): 上报位置 ----
+
+// 对应客户端 as6
+message UploadUserLocationRequest {
+    optional BaseRequest base_request = 1;
+    optional float  latitude         = 2;
+    optional float  longitude        = 3;
+    optional float  field4           = 4;
+    optional double altitude         = 5;
+    optional double field6           = 6;
+    optional uint32 field7           = 7;
+}
+
+message UploadUserLocationResponse {
+    optional BaseResponse base_response = 1;
+}
+
+// ---- weappsearchtitle (cmdid 1170): 搜索框联想词 ----
+
+// 对应客户端 r47 (仅 BaseRequest)
+message WeappSearchTitleRequest {
+    optional BaseRequest base_request = 1;
+}
+
+// 对应客户端 t47: 单条联想
+message WeappSearchTitleItem {
+    optional string content = 1; // 联想文案
+    optional string id      = 2; // 联想 id
+}
+
+// 对应客户端 s47
+message WeappSearchTitleResponse {
+    optional BaseResponse base_response       = 1;
+    optional WeappSearchTitleItem hint        = 2; // 搜索框默认文案
+    optional WeappSearchTitleItem hint2       = 3;
+    optional WeappSearchTitleItem placeholder = 4; // 输入框 placeholder
+}
+
+// ---- getpubliclibinfo: 公共库(基础库)版本 ----
+
+// 对应客户端 f97
+message GetPublicLibInfoRequest {
+    optional BaseRequest base_request = 1;
+    optional uint32 local_version     = 2; // 本地基础库版本, 0=查询最新
+}
+
+// 对应客户端 g97
+message GetPublicLibInfoResponse {
+    optional BaseResponse base_response = 1;
+    optional string field2 = 2;
+    optional string field3 = 3;
+    optional uint32 field4 = 4;
+    optional uint32 field5 = 5;
+    optional uint32 field6 = 6;
+    optional uint32 field7 = 7;
+    optional string field8 = 8;
+}
+
+// ---- wxaapp_batchgetwxausername (cmdid 24847): 批量群 openid 转小程序原始 ID ----
+
+// 对应客户端 bg
+message BatchGetWxaUsernameRequest {
+    optional BaseRequest base_request = 1;
+    optional string appid             = 2; // 小程序 appid
+    repeated fixed64 openids          = 3; // 群成员 openid (fixed64 打包, 对应客户端 g(3,1,...))
+}
+
+// 对应客户端 fz3: 单条转换结果
+message WxaUsernameItem {
+    optional uint32 ret      = 1;
+    optional string username = 2; // gh_ 原始 ID
+    optional uint32 field3   = 3;
+}
+
+// 对应客户端 cg
+message BatchGetWxaUsernameResponse {
+    optional BaseResponse base_response = 1;
+    optional WxaUsernameItem item       = 2;
+    repeated uint64 field3              = 3;
+}
+
+// ---- wxaattr/wxajsapiinfo (cmdid 3827): 小程序 JSAPI 能力信息 ----
+
+// 对应客户端 ab7
+message GetWxaJsApiInfoRequest {
+    optional BaseRequest base_request = 1;
+    repeated uint32 ids               = 2; // 查询的 jsapi id 列表, 空=全部
+    optional WxaCgiSource source      = 3;
+}
+
